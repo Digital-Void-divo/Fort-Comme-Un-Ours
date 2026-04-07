@@ -5,7 +5,7 @@ const { COLORS, embed } = require('../../utils/helpers');
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('sleep')
-    .setDescription('Track sleep and recovery')
+    .setDescription('Track sleep')
     .addSubcommand(sub =>
       sub.setName('log')
         .setDescription('Log sleep')
@@ -34,18 +34,16 @@ module.exports = {
         'INSERT INTO sleep_logs (user_id, guild_id, hours, quality, notes) VALUES (?, ?, ?, ?, ?)'
       ).run(interaction.user.id, interaction.guildId, hours, quality, notes);
 
-      // Calculate recovery score
-      const recoveryScore = calculateRecovery(hours, quality);
-      const recoveryLabel = recoveryScore >= 80 ? 'Excellent' : recoveryScore >= 60 ? 'Good' : recoveryScore >= 40 ? 'Fair' : 'Poor';
-      const recoveryColor = recoveryScore >= 80 ? COLORS.success : recoveryScore >= 60 ? COLORS.primary : recoveryScore >= 40 ? COLORS.warning : COLORS.error;
+      const color = hours >= 7 ? COLORS.success : hours >= 5 ? COLORS.warning : COLORS.error;
+      const verdict = hours >= 8 ? 'Great rest!' : hours >= 7 ? 'Solid night.' : hours >= 5 ? 'A bit short — aim for 7-9h.' : 'Very low — recovery will suffer.';
 
       const fields = [`**Hours:** ${hours}h`];
       if (quality) fields.push(`**Quality:** ${'⭐'.repeat(quality)}${'☆'.repeat(5 - quality)}`);
-      fields.push(`**Recovery Score:** ${recoveryScore}% — ${recoveryLabel}`);
+      fields.push(`**Verdict:** ${verdict}`);
       if (notes) fields.push(`**Notes:** ${notes}`);
 
       await interaction.reply({
-        embeds: [embed('😴 Sleep Logged', fields.join('\n'), recoveryColor)],
+        embeds: [embed('😴 Sleep Logged', fields.join('\n'), color)],
         ephemeral: true,
       });
 
@@ -70,12 +68,17 @@ module.exports = {
         ? qualityEntries.reduce((s, e) => s + e.quality, 0) / qualityEntries.length
         : null;
 
-      const avgRecovery = entries.reduce((s, e) => s + calculateRecovery(e.hours, e.quality), 0) / entries.length;
+      const bestNight = Math.max(...entries.map(e => e.hours));
+      const worstNight = Math.min(...entries.map(e => e.hours));
+      const consistency = entries.length >= 3
+        ? (1 - (Math.sqrt(entries.reduce((s, e) => s + Math.pow(e.hours - avgHours, 2), 0) / entries.length) / avgHours)) * 100
+        : null;
 
       const chart = entries.slice().reverse().map(e => {
         const date = new Date(e.created_at * 1000).toLocaleDateString('en-US', { weekday: 'short' });
         const bars = Math.round(e.hours * 2);
-        return `\`${date.padStart(3)}\` ${'█'.repeat(bars)} ${e.hours}h`;
+        const qualityStr = e.quality ? ` ${'⭐'.repeat(e.quality)}` : '';
+        return `\`${date.padStart(3)}\` ${'█'.repeat(bars)} ${e.hours}h${qualityStr}`;
       }).join('\n');
 
       const e = new EmbedBuilder()
@@ -84,19 +87,18 @@ module.exports = {
         .addFields(
           { name: 'Avg Hours', value: `${avgHours.toFixed(1)}h`, inline: true },
           { name: 'Avg Quality', value: avgQuality ? `${avgQuality.toFixed(1)}/5` : 'N/A', inline: true },
-          { name: 'Avg Recovery', value: `${avgRecovery.toFixed(0)}%`, inline: true },
+          { name: 'Entries', value: `${entries.length}`, inline: true },
+          { name: 'Best Night', value: `${bestNight}h`, inline: true },
+          { name: 'Worst Night', value: `${worstNight}h`, inline: true },
         )
-        .setColor(COLORS.primary)
+        .setColor(avgHours >= 7 ? COLORS.success : avgHours >= 5 ? COLORS.warning : COLORS.error)
         .setTimestamp();
+
+      if (consistency !== null) {
+        e.addFields({ name: 'Consistency', value: `${Math.max(0, consistency).toFixed(0)}%`, inline: true });
+      }
 
       await interaction.editReply({ embeds: [e] });
     }
   },
 };
-
-function calculateRecovery(hours, quality) {
-  // Hours contribute 60%, quality 40%
-  const hourScore = Math.min(100, (hours / 8) * 100);
-  const qualityScore = quality ? (quality / 5) * 100 : 60; // Default 60 if not provided
-  return Math.round(hourScore * 0.6 + qualityScore * 0.4);
-}

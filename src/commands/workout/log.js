@@ -107,14 +107,18 @@ module.exports = {
       console.error('Milestone check failed:', err.message);
     }
 
-    // Notify accountability partner
+    // Notify accountability partner via DM
     try {
       const pair = db.prepare(
         'SELECT * FROM accountability_pairs WHERE guild_id = ? AND (user1_id = ? OR user2_id = ?) AND active = 1'
       ).get(interaction.guildId, interaction.user.id, interaction.user.id);
       if (pair) {
         const partnerId = pair.user1_id === interaction.user.id ? pair.user2_id : pair.user1_id;
-        await interaction.channel.send(`<@${partnerId}> Your accountability partner just logged **${exerciseTitle}**! Don't fall behind! 💪`);
+        const partner = await interaction.guild.members.fetch(partnerId);
+        const { safeDM } = require('../../utils/helpers');
+        await safeDM(partner.user, {
+          embeds: [successEmbed('Partner Workout!', `Your accountability partner **${interaction.user.displayName}** just logged **${exerciseTitle}** (${sets}x${reps}${weight > 0 ? ` @ ${weight}${unit}` : ''})! Don't fall behind! 💪`)]
+        });
       }
     } catch (err) {
       console.error('Partner notification failed:', err.message);

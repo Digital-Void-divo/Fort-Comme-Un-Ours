@@ -41,7 +41,7 @@ registerButton('panel_challenge', async (interaction) => {
 
 registerButton('panel_social', async (interaction) => {
   await interaction.reply({
-    content: 'Social features:\n• `/leaderboard` — Server fitness rankings\n• `/partner request` — Find an accountability partner\n• `/progress-photo upload` — Share progress\n• `/milestones` — View earned milestones & roles',
+    content: 'Social features:\n• `/leaderboard` — Server fitness rankings\n• `/partner request` — Find an accountability partner\n• `/milestones` — View earned milestones & roles',
     ephemeral: true,
   });
 });
@@ -85,16 +85,17 @@ const FEATURE_SECTIONS = [
       { cmd: '/leaderboard', desc: 'View server fitness leaderboards' },
       { cmd: '/partner', desc: 'Accountability partner system' },
       { cmd: '/milestones', desc: 'View milestone role rewards' },
-      { cmd: '/progress-photo', desc: 'Upload and view progress photos' },
     ],
   },
   {
     name: '🔧 Tools',
     commands: [
       { cmd: '/calc', desc: 'BMI, TDEE, and 1RM calculators' },
+      { cmd: '/stats', desc: 'Quick fitness summary (week/month/all-time)' },
+      { cmd: '/convert', desc: 'Unit converter with plate math' },
       { cmd: '/timer', desc: 'Rest timer between sets' },
       { cmd: '/reminder', desc: 'Set workout reminders' },
-      { cmd: '/recipe', desc: 'Recipe suggestions by diet and macros' },
+      { cmd: '/recipe', desc: 'Recipe suggestions by diet and macros (50+)' },
       { cmd: '/quote', desc: 'Motivational fitness quotes' },
       { cmd: '/profile', desc: 'View or set up your fitness profile' },
     ],
