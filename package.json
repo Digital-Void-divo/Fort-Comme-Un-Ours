@@ -1,0 +1,20 @@
+{
+  "name": "fort-comme-un-ours",
+  "version": "1.0.0",
+  "description": "Discord fitness bot - Strong as a Bear",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js",
+    "deploy-commands": "node src/deploy-commands.js"
+  },
+  "dependencies": {
+    "better-sqlite3": "11.7.0",
+    "discord.js": "14.16.3",
+    "dotenv": "16.4.7",
+    "node-cron": "3.0.3"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
