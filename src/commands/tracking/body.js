@@ -1,6 +1,7 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const { getDb } = require('../../services/database');
-const { COLORS, embed } = require('../../utils/helpers');
+const { COLORS, embed, publishButton } = require('../../utils/helpers');
+const { cacheEmbed } = require('../../services/buttonHandler');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -44,7 +45,7 @@ module.exports = {
     const sub = interaction.options.getSubcommand();
 
     if (sub === 'log') {
-      await interaction.deferReply();
+      await interaction.deferReply({ ephemeral: true });
       const type = interaction.options.getString('type');
       const value = interaction.options.getNumber('value');
       const unit = interaction.options.getString('unit') || (type === 'weight' ? 'lbs' : 'in');
@@ -67,12 +68,16 @@ module.exports = {
       }
 
       const typeLabel = type.charAt(0).toUpperCase() + type.slice(1);
+      const logEmbed = embed(`${typeLabel} Logged`, `**${typeLabel}:** ${value} ${unit}${change}`, COLORS.success);
+      const key = `body|${interaction.user.id}|${Date.now()}`;
+      cacheEmbed(key, [logEmbed], interaction.guildId);
       await interaction.editReply({
-        embeds: [embed(`${typeLabel} Logged`, `**${typeLabel}:** ${value} ${unit}${change}`, COLORS.success)]
+        embeds: [logEmbed],
+        components: [publishButton(key)],
       });
 
     } else if (sub === 'progress') {
-      await interaction.deferReply();
+      await interaction.deferReply({ ephemeral: true });
       const type = interaction.options.getString('type');
       const db = getDb();
 
@@ -114,7 +119,9 @@ module.exports = {
         .setColor(COLORS.primary)
         .setTimestamp();
 
-      await interaction.editReply({ embeds: [e] });
+      const pKey = `bodyp|${interaction.user.id}|${Date.now()}`;
+      cacheEmbed(pKey, [e], interaction.guildId);
+      await interaction.editReply({ embeds: [e], components: [publishButton(pKey)] });
     }
   },
 };

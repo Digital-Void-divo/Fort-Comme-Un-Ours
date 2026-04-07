@@ -139,7 +139,7 @@ module.exports = {
       await interaction.reply({ embeds: [embed('✅ Progress Submitted', desc, COLORS.success)] });
 
     } else if (sub === 'list') {
-      await interaction.deferReply();
+      await interaction.deferReply({ ephemeral: true });
       const challenges = db.prepare(
         'SELECT c.*, (SELECT COUNT(*) FROM challenge_entries WHERE challenge_id = c.id) as participants FROM challenges c WHERE c.guild_id = ? AND c.active = 1 ORDER BY c.end_date'
       ).all(interaction.guildId);
@@ -166,7 +166,7 @@ module.exports = {
       await interaction.editReply({ embeds: [e] });
 
     } else if (sub === 'leaderboard') {
-      await interaction.deferReply();
+      await interaction.deferReply({ ephemeral: true });
       const challengeId = interaction.options.getInteger('challenge_id');
 
       const challenge = db.prepare('SELECT * FROM challenges WHERE id = ? AND guild_id = ?').get(challengeId, interaction.guildId);

@@ -1,4 +1,4 @@
-const { EmbedBuilder } = require('discord.js');
+const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 
 const COLORS = {
   primary: 0x5865F2,
@@ -42,8 +42,26 @@ function daysBetween(ts1, ts2) {
 }
 
 function todayEpoch() {
+  // Use UTC to stay consistent with SQLite's strftime('%s','now')
   const now = new Date();
-  return Math.floor(new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime() / 1000);
+  return Math.floor(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()) / 1000);
+}
+
+function weekStartFor(date = new Date()) {
+  const d = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+  const day = d.getUTCDay(); // 0=Sun
+  d.setUTCDate(d.getUTCDate() - day);
+  return d.toISOString().slice(0, 10);
+}
+
+function publishButton(customIdSuffix) {
+  return new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setCustomId(`publish|${customIdSuffix}`)
+      .setLabel('Publish to Channel')
+      .setStyle(ButtonStyle.Secondary)
+      .setEmoji('📢')
+  );
 }
 
 async function safeDM(user, content) {
@@ -67,5 +85,6 @@ function parseDuration(str) {
 
 module.exports = {
   COLORS, embed, errorEmbed, successEmbed, progressBar,
-  formatNumber, daysBetween, todayEpoch, safeDM, parseDuration,
+  formatNumber, daysBetween, todayEpoch, weekStartFor,
+  safeDM, parseDuration, publishButton,
 };

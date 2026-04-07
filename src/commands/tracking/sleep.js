@@ -45,11 +45,12 @@ module.exports = {
       if (notes) fields.push(`**Notes:** ${notes}`);
 
       await interaction.reply({
-        embeds: [embed('😴 Sleep Logged', fields.join('\n'), recoveryColor)]
+        embeds: [embed('😴 Sleep Logged', fields.join('\n'), recoveryColor)],
+        ephemeral: true,
       });
 
     } else if (sub === 'stats') {
-      await interaction.deferReply();
+      await interaction.deferReply({ ephemeral: true });
       const days = interaction.options.getInteger('days') || 7;
       const since = Math.floor(Date.now() / 1000) - (days * 86400);
 

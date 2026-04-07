@@ -70,10 +70,10 @@ module.exports = {
         .setColor(COLORS.success)
         .setTimestamp();
 
-      await interaction.reply({ embeds: [e] });
+      await interaction.reply({ embeds: [e], ephemeral: true });
 
     } else if (sub === 'today') {
-      await interaction.deferReply();
+      await interaction.deferReply({ ephemeral: true });
       const today = todayEpoch();
 
       const entries = db.prepare(

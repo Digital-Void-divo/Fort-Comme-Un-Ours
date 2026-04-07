@@ -1,6 +1,7 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const { getDb } = require('../../services/database');
-const { COLORS } = require('../../utils/helpers');
+const { COLORS, publishButton } = require('../../utils/helpers');
+const { cacheEmbed } = require('../../services/buttonHandler');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -15,7 +16,7 @@ module.exports = {
       )),
 
   async execute(interaction) {
-    await interaction.deferReply();
+    await interaction.deferReply({ ephemeral: true });
     const type = interaction.options.getString('type');
     const db = getDb();
     const weekAgo = Math.floor(Date.now() / 1000) - 604800;
@@ -73,6 +74,8 @@ module.exports = {
       .setColor(COLORS.gold)
       .setTimestamp();
 
-    await interaction.editReply({ embeds: [e] });
+    const key = `lb|${type}|${Date.now()}`;
+    cacheEmbed(key, [e], interaction.guildId);
+    await interaction.editReply({ embeds: [e], components: [publishButton(key)] });
   },
 };

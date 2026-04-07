@@ -1,6 +1,7 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const { getDb } = require('../../services/database');
-const { COLORS, progressBar, todayEpoch, embed } = require('../../utils/helpers');
+const { COLORS, progressBar, todayEpoch, embed, publishButton } = require('../../utils/helpers');
+const { cacheEmbed } = require('../../services/buttonHandler');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -70,7 +71,9 @@ module.exports = {
         e.addFields({ name: '🎉', value: 'You hit your water goal for today!' });
       }
 
-      await interaction.reply({ embeds: [e] });
+      const wKey = `water|${interaction.user.id}|${Date.now()}`;
+      cacheEmbed(wKey, [e], interaction.guildId);
+      await interaction.reply({ embeds: [e], components: [publishButton(wKey)], ephemeral: true });
 
     } else if (sub === 'today') {
       const today = todayEpoch();
@@ -105,7 +108,7 @@ module.exports = {
         .setColor(COLORS.water)
         .setTimestamp();
 
-      await interaction.reply({ embeds: [e] });
+      await interaction.reply({ embeds: [e], ephemeral: true });
 
     } else if (sub === 'reminder') {
       const action = interaction.options.getString('action');

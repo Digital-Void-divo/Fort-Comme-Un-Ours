@@ -1,6 +1,7 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const { getStreak } = require('../../services/streakService');
-const { COLORS, progressBar } = require('../../utils/helpers');
+const { COLORS, progressBar, publishButton } = require('../../utils/helpers');
+const { cacheEmbed } = require('../../services/buttonHandler');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -31,6 +32,13 @@ module.exports = {
       )
       .setTimestamp();
 
-    await interaction.reply({ embeds: [e] });
+    const key = `streak|${target.id}|${Date.now()}`;
+    cacheEmbed(key, [e], interaction.guildId);
+
+    await interaction.reply({
+      embeds: [e],
+      components: [publishButton(key)],
+      ephemeral: true,
+    });
   },
 };

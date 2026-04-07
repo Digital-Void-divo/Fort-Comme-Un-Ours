@@ -2,9 +2,12 @@ const { SlashCommandBuilder } = require('discord.js');
 const { getDb } = require('../../services/database');
 const { checkAndUpdatePR } = require('../../services/prService');
 const { updateStreak } = require('../../services/streakService');
-const { embed, successEmbed, COLORS } = require('../../utils/helpers');
+const { successEmbed, publishButton, COLORS } = require('../../utils/helpers');
 const { checkMilestones } = require('../../services/roleRewards');
+const { cacheEmbed } = require('../../services/buttonHandler');
 const exercises = require('../../data/exercises');
+
+const WORKOUT_CATEGORIES = ['Strength', 'Cardio', 'Flexibility', 'Sport', 'Other'];
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -24,6 +27,12 @@ module.exports = {
         { name: 'kg', value: 'kg' },
       ))
     .addStringOption(opt =>
+      opt.setName('category').setDescription('Workout category').addChoices(
+        ...WORKOUT_CATEGORIES.map(c => ({ name: c, value: c })),
+      ))
+    .addStringOption(opt =>
+      opt.setName('details').setDescription('Workout details (e.g. "3x8 @ 155lbs, felt good")'))
+    .addStringOption(opt =>
       opt.setName('notes').setDescription('Optional notes')),
 
   async autocomplete(interaction) {
@@ -36,28 +45,32 @@ module.exports = {
   },
 
   async execute(interaction) {
-    await interaction.deferReply();
+    await interaction.deferReply({ ephemeral: true });
 
     const exercise = interaction.options.getString('exercise').toLowerCase().trim();
     const sets = interaction.options.getInteger('sets');
     const reps = interaction.options.getInteger('reps');
     const weight = interaction.options.getNumber('weight') || 0;
     const unit = interaction.options.getString('unit') || 'lbs';
+    const category = interaction.options.getString('category') || 'Strength';
+    const details = interaction.options.getString('details') || null;
     const notes = interaction.options.getString('notes') || null;
 
     const db = getDb();
     db.prepare(
-      'INSERT INTO workouts (user_id, guild_id, exercise, sets, reps, weight, weight_unit, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
-    ).run(interaction.user.id, interaction.guildId, exercise, sets, reps, weight, unit, notes);
+      'INSERT INTO workouts (user_id, guild_id, exercise, category, sets, reps, weight, weight_unit, details, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+    ).run(interaction.user.id, interaction.guildId, exercise, category, sets, reps, weight, unit, details, notes);
 
     const streak = updateStreak(interaction.user.id, interaction.guildId);
     const exerciseTitle = exercise.split(' ').map(w => w[0].toUpperCase() + w.slice(1)).join(' ');
 
     const fields = [
       `**Exercise:** ${exerciseTitle}`,
+      `**Category:** ${category}`,
       `**Sets:** ${sets} x ${reps} reps`,
     ];
     if (weight > 0) fields.push(`**Weight:** ${weight} ${unit}`);
+    if (details) fields.push(`**Details:** ${details}`);
     if (notes) fields.push(`**Notes:** ${notes}`);
     fields.push(`**Streak:** ${streak.current} day(s) ${streak.current >= 7 ? '🔥' : ''}`);
 
@@ -90,19 +103,22 @@ module.exports = {
 
     // Notify accountability partner
     try {
-      const db2 = getDb();
-      const pair = db2.prepare(
+      const pair = db.prepare(
         'SELECT * FROM accountability_pairs WHERE guild_id = ? AND (user1_id = ? OR user2_id = ?) AND active = 1'
       ).get(interaction.guildId, interaction.user.id, interaction.user.id);
       if (pair) {
         const partnerId = pair.user1_id === interaction.user.id ? pair.user2_id : pair.user1_id;
-        const channel = interaction.channel;
-        if (channel) {
-          await channel.send(`<@${partnerId}> Your accountability partner just logged **${exerciseTitle}**! Don't fall behind! 💪`);
-        }
+        await interaction.channel.send(`<@${partnerId}> Your accountability partner just logged **${exerciseTitle}**! Don't fall behind! 💪`);
       }
     } catch {}
 
-    await interaction.editReply({ embeds: [e] });
+    // Cache for publish
+    const key = `log|${interaction.user.id}|${Date.now()}`;
+    cacheEmbed(key, [e], interaction.guildId);
+
+    await interaction.editReply({
+      embeds: [e],
+      components: [publishButton(key)],
+    });
   },
 };

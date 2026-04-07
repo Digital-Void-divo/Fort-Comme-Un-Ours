@@ -1,6 +1,7 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const { getDb } = require('../../services/database');
-const { embed, COLORS } = require('../../utils/helpers');
+const { embed, COLORS, publishButton } = require('../../utils/helpers');
+const { cacheEmbed } = require('../../services/buttonHandler');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -12,15 +13,27 @@ module.exports = {
       opt.setName('user').setDescription('View another user\'s history')),
 
   async execute(interaction) {
-    await interaction.deferReply();
+    await interaction.deferReply({ ephemeral: true });
 
     const days = interaction.options.getInteger('days') || 7;
     const target = interaction.options.getUser('user') || interaction.user;
     const since = Math.floor(Date.now() / 1000) - (days * 86400);
 
+    // Privacy check
+    if (target.id !== interaction.user.id) {
+      const db = getDb();
+      const profile = db.prepare('SELECT is_public FROM user_profiles WHERE user_id = ? AND guild_id = ?')
+        .get(target.id, interaction.guildId);
+      if (profile && !profile.is_public) {
+        return interaction.editReply({
+          embeds: [embed('Private Profile', `<@${target.id}>'s profile is private.`, COLORS.warning)]
+        });
+      }
+    }
+
     const db = getDb();
     const workouts = db.prepare(
-      'SELECT exercise, sets, reps, weight, weight_unit, notes, created_at FROM workouts WHERE user_id = ? AND guild_id = ? AND created_at >= ? ORDER BY created_at DESC LIMIT 25'
+      'SELECT exercise, category, sets, reps, weight, weight_unit, details, notes, created_at FROM workouts WHERE user_id = ? AND guild_id = ? AND created_at >= ? ORDER BY created_at DESC LIMIT 25'
     ).all(target.id, interaction.guildId, since);
 
     if (workouts.length === 0) {
@@ -32,7 +45,7 @@ module.exports = {
     const e = new EmbedBuilder()
       .setTitle(`Workout History — ${target.displayName}`)
       .setColor(COLORS.primary)
-      .setDescription(`Last ${days} day(s) • ${workouts.length} exercise(s) logged`)
+      .setDescription(`Last ${days} day(s) · ${workouts.length} exercise(s) logged`)
       .setTimestamp();
 
     for (const w of workouts.slice(0, 15)) {
@@ -40,14 +53,21 @@ module.exports = {
       const date = new Date(w.created_at * 1000).toLocaleDateString();
       let value = `${w.sets}x${w.reps}`;
       if (w.weight > 0) value += ` @ ${w.weight} ${w.weight_unit}`;
+      if (w.details) value += `\n${w.details}`;
       if (w.notes) value += `\n*${w.notes}*`;
-      e.addFields({ name: `${name} — ${date}`, value, inline: true });
+      e.addFields({ name: `[${w.category || '?'}] ${name} — ${date}`, value, inline: true });
     }
 
     if (workouts.length > 15) {
       e.setFooter({ text: `Showing 15 of ${workouts.length} entries` });
     }
 
-    await interaction.editReply({ embeds: [e] });
+    const key = `hist|${target.id}|${Date.now()}`;
+    cacheEmbed(key, [e], interaction.guildId);
+
+    await interaction.editReply({
+      embeds: [e],
+      components: [publishButton(key)],
+    });
   },
 };

@@ -11,7 +11,7 @@ module.exports = {
       opt.setName('user').setDescription('View another user\'s milestones')),
 
   async execute(interaction) {
-    await interaction.deferReply();
+    await interaction.deferReply({ ephemeral: true });
     const target = interaction.options.getUser('user') || interaction.user;
     const db = getDb();
 

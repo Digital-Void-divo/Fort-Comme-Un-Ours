@@ -5,6 +5,7 @@ const { handleButton } = require('../services/buttonHandler');
 module.exports = {
   name: Events.InteractionCreate,
   async execute(interaction) {
+    // ── Slash commands & autocomplete ──
     if (interaction.isChatInputCommand() || interaction.isAutocomplete()) {
       const command = interaction.client.commands.get(interaction.commandName);
       if (!command) return;
@@ -28,6 +29,8 @@ module.exports = {
           console.error('Failed to send error reply:', replyError);
         }
       }
+
+    // ── Buttons ──
     } else if (interaction.isButton()) {
       try {
         await handleButton(interaction);
@@ -36,6 +39,19 @@ module.exports = {
         try {
           if (!interaction.replied && !interaction.deferred) {
             await interaction.reply({ embeds: [errorEmbed('Button action failed.')], ephemeral: true });
+          }
+        } catch {}
+      }
+
+    // ── Select menus (string selects used by hub) ──
+    } else if (interaction.isStringSelectMenu()) {
+      try {
+        await handleButton(interaction);
+      } catch (error) {
+        console.error('Error handling select menu:', error);
+        try {
+          if (!interaction.replied && !interaction.deferred) {
+            await interaction.reply({ embeds: [errorEmbed('Selection failed.')], ephemeral: true });
           }
         } catch {}
       }

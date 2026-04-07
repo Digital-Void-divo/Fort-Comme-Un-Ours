@@ -1,7 +1,8 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const { getDb } = require('../../services/database');
-const { COLORS, embed, progressBar } = require('../../utils/helpers');
+const { COLORS, embed, progressBar, publishButton } = require('../../utils/helpers');
 const { getStreak } = require('../../services/streakService');
+const { cacheEmbed } = require('../../services/buttonHandler');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -70,8 +71,17 @@ module.exports = {
       });
 
     } else if (sub === 'view') {
-      await interaction.deferReply();
+      await interaction.deferReply({ ephemeral: true });
       const target = interaction.options.getUser('user') || interaction.user;
+
+      // Privacy check
+      if (target.id !== interaction.user.id) {
+        const privCheck = db.prepare('SELECT is_public FROM user_profiles WHERE user_id = ? AND guild_id = ?')
+          .get(target.id, interaction.guildId);
+        if (privCheck && !privCheck.is_public) {
+          return interaction.editReply({ content: 'This user\'s profile is private.' });
+        }
+      }
 
       const profile = db.prepare(
         'SELECT * FROM user_profiles WHERE user_id = ? AND guild_id = ?'
@@ -128,7 +138,9 @@ module.exports = {
         }
       }
 
-      await interaction.editReply({ embeds: [e] });
+      const key = `profile|${target.id}|${Date.now()}`;
+      cacheEmbed(key, [e], interaction.guildId);
+      await interaction.editReply({ embeds: [e], components: [publishButton(key)] });
     }
   },
 };

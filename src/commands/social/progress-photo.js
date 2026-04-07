@@ -24,7 +24,7 @@ module.exports = {
     const db = getDb();
 
     if (sub === 'upload') {
-      await interaction.deferReply();
+      await interaction.deferReply({ ephemeral: true });
       const attachment = interaction.options.getAttachment('photo');
       const caption = interaction.options.getString('caption') || null;
 
@@ -52,7 +52,7 @@ module.exports = {
       await interaction.editReply({ embeds: [e] });
 
     } else if (sub === 'view') {
-      await interaction.deferReply();
+      await interaction.deferReply({ ephemeral: true });
       const target = interaction.options.getUser('user') || interaction.user;
 
       const photos = db.prepare(

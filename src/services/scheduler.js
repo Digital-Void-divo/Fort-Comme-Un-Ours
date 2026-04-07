@@ -1,5 +1,5 @@
 const cron = require('node-cron');
-const { getDb } = require('./database');
+const { getDb, getGuildConfig } = require('./database');
 const { safeDM, embed, COLORS } = require('../utils/helpers');
 
 const jobs = [];
@@ -8,13 +8,13 @@ function loadScheduledJobs(client) {
   // Motivational quote of the day at 8 AM UTC
   jobs.push(cron.schedule('0 8 * * *', () => sendMotivationalQuote(client)));
 
-  // Check for water reminders every 2 hours
+  // Water reminders every 2 hours
   jobs.push(cron.schedule('0 */2 * * *', () => sendWaterReminders(client)));
 
-  // Process custom reminders every minute
-  jobs.push(cron.schedule('* * * * *', () => processCustomReminders(client)));
+  // Workout reminders — check once per minute, fire those whose cron matches
+  jobs.push(cron.schedule('* * * * *', () => fireWorkoutReminders(client)));
 
-  // End expired challenges daily
+  // End expired challenges daily at midnight
   jobs.push(cron.schedule('0 0 * * *', () => endExpiredChallenges(client)));
 
   // Weekly summary on Sunday at 9 AM UTC
@@ -29,17 +29,31 @@ function loadScheduledJobs(client) {
 async function sendMotivationalQuote(client) {
   const quotes = require('../data/quotes');
   const quote = quotes[Math.floor(Math.random() * quotes.length)];
-  const db = getDb();
-  const guilds = client.guilds.cache;
 
-  for (const [, guild] of guilds) {
-    const channels = guild.channels.cache.filter(
-      ch => ch.isTextBased() && ch.name.includes('fitness') || ch.name.includes('motivation')
-    );
-    const channel = channels.first();
+  for (const [, guild] of client.guilds.cache) {
+    // Check for configured fitness channel first
+    const configuredChannelId = getGuildConfig(guild.id, 'fitness_channel_id');
+    let channel = null;
+
+    if (configuredChannelId) {
+      try {
+        channel = await guild.channels.fetch(configuredChannelId);
+      } catch {}
+    }
+
+    // Fall back to name-based search
+    if (!channel) {
+      const candidates = guild.channels.cache.filter(
+        ch => ch.isTextBased() && (ch.name.includes('fitness') || ch.name.includes('motivation'))
+      );
+      channel = candidates.first();
+    }
+
     if (channel) {
       try {
-        await channel.send({ embeds: [embed('Quote of the Day', `*"${quote.text}"*\n\n— ${quote.author}`, COLORS.gold)] });
+        await channel.send({
+          embeds: [embed('Quote of the Day', `*"${quote.text}"*\n\n— ${quote.author}`, COLORS.gold)]
+        });
       } catch {}
     }
   }
@@ -60,24 +74,37 @@ async function sendWaterReminders(client) {
   }
 }
 
-async function processCustomReminders(client) {
+function fireWorkoutReminders(client) {
   const db = getDb();
   const reminders = db.prepare(
     "SELECT * FROM reminders WHERE reminder_type = 'workout' AND active = 1"
   ).all();
 
   const now = new Date();
+  const currentMinute = now.getUTCMinutes();
+  const currentHour = now.getUTCHours();
+  const currentDow = now.getUTCDay(); // 0=Sun
+
   for (const r of reminders) {
-    if (cron.validate(r.cron_expression)) {
-      const task = cron.schedule(r.cron_expression, async () => {
+    // Parse cron: minute hour * * dow
+    const parts = r.cron_expression.split(' ');
+    if (parts.length < 5) continue;
+
+    const [cronMin, cronHour, , , cronDow] = parts;
+
+    const minMatch = cronMin === '*' || cronMin === String(currentMinute);
+    const hourMatch = cronHour === '*' || cronHour === String(currentHour);
+    const dowMatch = cronDow === '*' || cronDow.split(',').includes(String(currentDow));
+
+    if (minMatch && hourMatch && dowMatch) {
+      (async () => {
         try {
           const guild = await client.guilds.fetch(r.guild_id);
           const channel = await guild.channels.fetch(r.channel_id);
           const msg = r.message || 'Time for your workout!';
           await channel.send(`<@${r.user_id}> ${msg}`);
         } catch {}
-        task.stop();
-      });
+      })();
     }
   }
 }
@@ -99,11 +126,22 @@ async function endExpiredChallenges(client) {
     if (entries.length > 0) {
       try {
         const guild = await client.guilds.fetch(challenge.guild_id);
-        const channels = guild.channels.cache.filter(ch => ch.isTextBased());
-        const channel = channels.first();
+
+        // Use configured channel or first text channel
+        const configuredId = getGuildConfig(challenge.guild_id, 'fitness_channel_id');
+        let channel = null;
+        if (configuredId) {
+          try { channel = await guild.channels.fetch(configuredId); } catch {}
+        }
+        if (!channel) {
+          channel = guild.channels.cache.filter(ch => ch.isTextBased()).first();
+        }
+
         if (channel) {
           const medals = ['first_place', 'second_place', 'third_place'];
-          let results = entries.map((e, i) => `:${medals[i] || 'medal'}: <@${e.user_id}> — ${e.value}`).join('\n');
+          const results = entries.map((e, i) =>
+            `:${medals[i] || 'medal'}: <@${e.user_id}> — ${e.value}`
+          ).join('\n');
           await channel.send({
             embeds: [embed(`Challenge Complete: ${challenge.title}`, `Results:\n${results}`, COLORS.gold)]
           });
