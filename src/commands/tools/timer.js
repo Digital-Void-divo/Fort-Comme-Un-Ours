@@ -65,7 +65,9 @@ module.exports = {
         await interaction.followUp({ content: `<@${interaction.user.id}>`, embeds: [doneEmbed] });
         // Remove cancel button
         await interaction.editReply({ components: [] });
-      } catch {}
+      } catch (err) {
+        console.error('Timer completion notification failed:', err.message);
+      }
     }, seconds * 1000);
 
     activeTimers.set(key, { timeout, userId: interaction.user.id });

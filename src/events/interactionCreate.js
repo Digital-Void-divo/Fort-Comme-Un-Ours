@@ -26,7 +26,7 @@ module.exports = {
             await interaction.reply(reply);
           }
         } catch (replyError) {
-          console.error('Failed to send error reply:', replyError);
+          console.error('Failed to send error reply:', replyError.message);
         }
       }
 
@@ -40,7 +40,9 @@ module.exports = {
           if (!interaction.replied && !interaction.deferred) {
             await interaction.reply({ embeds: [errorEmbed('Button action failed.')], ephemeral: true });
           }
-        } catch {}
+        } catch (replyErr) {
+          console.error('Button error reply also failed:', replyErr.message);
+        }
       }
 
     // ── Select menus (string selects used by hub) ──
@@ -53,7 +55,9 @@ module.exports = {
           if (!interaction.replied && !interaction.deferred) {
             await interaction.reply({ embeds: [errorEmbed('Selection failed.')], ephemeral: true });
           }
-        } catch {}
+        } catch (replyErr) {
+          console.error('Select menu error reply also failed:', replyErr.message);
+        }
       }
     }
   },

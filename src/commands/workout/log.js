@@ -36,12 +36,16 @@ module.exports = {
       opt.setName('notes').setDescription('Optional notes')),
 
   async autocomplete(interaction) {
-    const focused = interaction.options.getFocused().toLowerCase();
-    const matches = Object.keys(exercises)
-      .filter(e => e.includes(focused))
-      .slice(0, 25)
-      .map(e => ({ name: e.split(' ').map(w => w[0].toUpperCase() + w.slice(1)).join(' '), value: e }));
-    await interaction.respond(matches);
+    try {
+      const focused = interaction.options.getFocused().toLowerCase();
+      const matches = Object.keys(exercises)
+        .filter(e => e.includes(focused))
+        .slice(0, 25)
+        .map(e => ({ name: e.split(' ').map(w => w[0].toUpperCase() + w.slice(1)).join(' '), value: e }));
+      await interaction.respond(matches);
+    } catch (err) {
+      console.error('Autocomplete failed:', err.message);
+    }
   },
 
   async execute(interaction) {
@@ -99,7 +103,9 @@ module.exports = {
       for (const ms of newMilestones) {
         e.addFields({ name: '🏅 Milestone Unlocked!', value: `**${ms.name}** — Keep it up!` });
       }
-    } catch {}
+    } catch (err) {
+      console.error('Milestone check failed:', err.message);
+    }
 
     // Notify accountability partner
     try {
@@ -110,7 +116,9 @@ module.exports = {
         const partnerId = pair.user1_id === interaction.user.id ? pair.user2_id : pair.user1_id;
         await interaction.channel.send(`<@${partnerId}> Your accountability partner just logged **${exerciseTitle}**! Don't fall behind! 💪`);
       }
-    } catch {}
+    } catch (err) {
+      console.error('Partner notification failed:', err.message);
+    }
 
     // Cache for publish
     const key = `log|${interaction.user.id}|${Date.now()}`;

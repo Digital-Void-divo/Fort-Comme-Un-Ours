@@ -10,12 +10,16 @@ module.exports = {
       opt.setName('name').setDescription('Exercise name').setRequired(true).setAutocomplete(true)),
 
   async autocomplete(interaction) {
-    const focused = interaction.options.getFocused().toLowerCase();
-    const matches = Object.keys(exercises)
-      .filter(e => e.includes(focused))
-      .slice(0, 25)
-      .map(e => ({ name: e.split(' ').map(w => w[0].toUpperCase() + w.slice(1)).join(' '), value: e }));
-    await interaction.respond(matches);
+    try {
+      const focused = interaction.options.getFocused().toLowerCase();
+      const matches = Object.keys(exercises)
+        .filter(e => e.includes(focused))
+        .slice(0, 25)
+        .map(e => ({ name: e.split(' ').map(w => w[0].toUpperCase() + w.slice(1)).join(' '), value: e }));
+      await interaction.respond(matches);
+    } catch (err) {
+      console.error('Autocomplete failed:', err.message);
+    }
   },
 
   async execute(interaction) {

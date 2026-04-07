@@ -31,17 +31,17 @@ async function sendMotivationalQuote(client) {
   const quote = quotes[Math.floor(Math.random() * quotes.length)];
 
   for (const [, guild] of client.guilds.cache) {
-    // Check for configured fitness channel first
     const configuredChannelId = getGuildConfig(guild.id, 'fitness_channel_id');
     let channel = null;
 
     if (configuredChannelId) {
       try {
         channel = await guild.channels.fetch(configuredChannelId);
-      } catch {}
+      } catch (err) {
+        console.error(`Failed to fetch configured channel ${configuredChannelId}:`, err.message);
+      }
     }
 
-    // Fall back to name-based search
     if (!channel) {
       const candidates = guild.channels.cache.filter(
         ch => ch.isTextBased() && (ch.name.includes('fitness') || ch.name.includes('motivation'))
@@ -54,7 +54,9 @@ async function sendMotivationalQuote(client) {
         await channel.send({
           embeds: [embed('Quote of the Day', `*"${quote.text}"*\n\n— ${quote.author}`, COLORS.gold)]
         });
-      } catch {}
+      } catch (err) {
+        console.error(`Failed to send quote to ${channel.id}:`, err.message);
+      }
     }
   }
 }
@@ -70,7 +72,9 @@ async function sendWaterReminders(client) {
       const guild = await client.guilds.fetch(r.guild_id);
       const channel = await guild.channels.fetch(r.channel_id);
       await channel.send(`<@${r.user_id}> Don't forget to drink water! Use \`/water add\` to log your intake.`);
-    } catch {}
+    } catch (err) {
+      console.error(`Water reminder failed for user ${r.user_id}:`, err.message);
+    }
   }
 }
 
@@ -86,7 +90,6 @@ function fireWorkoutReminders(client) {
   const currentDow = now.getUTCDay(); // 0=Sun
 
   for (const r of reminders) {
-    // Parse cron: minute hour * * dow
     const parts = r.cron_expression.split(' ');
     if (parts.length < 5) continue;
 
@@ -103,7 +106,9 @@ function fireWorkoutReminders(client) {
           const channel = await guild.channels.fetch(r.channel_id);
           const msg = r.message || 'Time for your workout!';
           await channel.send(`<@${r.user_id}> ${msg}`);
-        } catch {}
+        } catch (err) {
+          console.error(`Workout reminder failed for user ${r.user_id}:`, err.message);
+        }
       })();
     }
   }
@@ -127,11 +132,14 @@ async function endExpiredChallenges(client) {
       try {
         const guild = await client.guilds.fetch(challenge.guild_id);
 
-        // Use configured channel or first text channel
         const configuredId = getGuildConfig(challenge.guild_id, 'fitness_channel_id');
         let channel = null;
         if (configuredId) {
-          try { channel = await guild.channels.fetch(configuredId); } catch {}
+          try {
+            channel = await guild.channels.fetch(configuredId);
+          } catch (err) {
+            console.error(`Failed to fetch configured channel for challenge:`, err.message);
+          }
         }
         if (!channel) {
           channel = guild.channels.cache.filter(ch => ch.isTextBased()).first();
@@ -146,7 +154,9 @@ async function endExpiredChallenges(client) {
             embeds: [embed(`Challenge Complete: ${challenge.title}`, `Results:\n${results}`, COLORS.gold)]
           });
         }
-      } catch {}
+      } catch (err) {
+        console.error(`Failed to announce challenge ${challenge.id} results:`, err.message);
+      }
     }
   }
 }
@@ -185,8 +195,18 @@ async function sendWeeklySummaries(client) {
       await safeDM(member.user, {
         embeds: [embed('Your Weekly Fitness Summary', summary, COLORS.primary)]
       });
-    } catch {}
+    } catch (err) {
+      console.error(`Weekly summary failed for user ${user_id}:`, err.message);
+    }
   }
 }
 
-module.exports = { loadScheduledJobs };
+function stopAllJobs() {
+  for (const job of jobs) {
+    job.stop();
+  }
+  jobs.length = 0;
+  console.log('Scheduled jobs stopped');
+}
+
+module.exports = { loadScheduledJobs, stopAllJobs };

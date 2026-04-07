@@ -115,7 +115,7 @@ module.exports = {
 
       db.prepare('UPDATE goals SET current_value = ? WHERE id = ?').run(value, id);
 
-      const pct = Math.min(100, Math.round((value / goal.target_value) * 100));
+      const pct = goal.target_value > 0 ? Math.min(100, Math.round((value / goal.target_value) * 100)) : 0;
 
       // Check direction-based completion
       const completed = goal.direction === 'decrease'
@@ -213,7 +213,7 @@ module.exports = {
         .setTimestamp();
 
       for (const g of goals.slice(0, 10)) {
-        const pct = Math.min(100, Math.round((g.current_value / g.target_value) * 100));
+        const pct = g.target_value > 0 ? Math.min(100, Math.round((g.current_value / g.target_value) * 100)) : 0;
         const status = g.completed ? '✅' : '🔄';
         const dirIcon = g.direction === 'decrease' ? '📉' : '📈';
         let value = `${status} ${dirIcon} ${g.current_value} / ${g.target_value} ${g.unit}\n${progressBar(g.current_value, g.target_value)} ${pct}%`;

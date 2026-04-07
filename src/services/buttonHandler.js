@@ -72,7 +72,9 @@ async function handlePublish(interaction) {
   } catch (err) {
     try {
       await interaction.reply({ content: 'Failed to publish. Make sure the bot has permission to send messages here.', ephemeral: true });
-    } catch {}
+    } catch (replyErr) {
+      console.error('Publish error reply failed:', replyErr.message);
+    }
   }
 }
 

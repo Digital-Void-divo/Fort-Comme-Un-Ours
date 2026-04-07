@@ -117,7 +117,7 @@ module.exports = {
         db.prepare(`
           INSERT INTO reminders (user_id, guild_id, channel_id, reminder_type, cron_expression)
           VALUES (?, ?, ?, 'water', '0 */2 * * *')
-          ON CONFLICT DO NOTHING
+          ON CONFLICT(user_id, guild_id, reminder_type) DO UPDATE SET channel_id = excluded.channel_id
         `).run(interaction.user.id, interaction.guildId, interaction.channelId);
         await interaction.reply({ embeds: [embed('💧 Water Reminders', 'Water reminders **enabled**! You\'ll be reminded every 2 hours.', COLORS.water)], ephemeral: true });
       } else {

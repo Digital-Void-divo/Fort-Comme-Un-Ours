@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const config = require('./config');
 const { close: closeDb } = require('./services/database');
-const { loadScheduledJobs } = require('./services/scheduler');
+const { loadScheduledJobs, stopAllJobs } = require('./services/scheduler');
 
 const client = new Client({
   intents: [
@@ -56,6 +56,7 @@ process.on('uncaughtException', (error) => {
 // Graceful shutdown
 process.on('SIGTERM', async () => {
   console.log('SIGTERM received, shutting down gracefully...');
+  stopAllJobs();
   closeDb();
   client.destroy();
   process.exit(0);
@@ -63,6 +64,7 @@ process.on('SIGTERM', async () => {
 
 process.on('SIGINT', async () => {
   console.log('SIGINT received, shutting down...');
+  stopAllJobs();
   closeDb();
   client.destroy();
   process.exit(0);

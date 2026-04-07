@@ -78,7 +78,9 @@ async function checkMilestones(userId, guildId, guild) {
         const member = await guild.members.fetch(userId);
         await member.roles.add(role);
       }
-    } catch {}
+    } catch (err) {
+      console.error(`Failed to assign role "${milestone.name}" to user ${userId}:`, err.message);
+    }
   }
 
   return earned;

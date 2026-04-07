@@ -150,7 +150,7 @@ function initialize(db) {
     -- Challenge participants
     CREATE TABLE IF NOT EXISTS challenge_entries (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      challenge_id INTEGER NOT NULL REFERENCES challenges(id),
+      challenge_id INTEGER NOT NULL REFERENCES challenges(id) ON DELETE CASCADE,
       user_id TEXT NOT NULL,
       value REAL DEFAULT 0,
       updated_at INTEGER NOT NULL DEFAULT (strftime('%s','now')),
@@ -289,7 +289,9 @@ function migrate(db) {
       if (!cols.find(c => c.name === m.column)) {
         db.exec(m.sql);
       }
-    } catch {}
+    } catch (err) {
+      console.error(`Migration failed for ${m.table}.${m.column}:`, err.message);
+    }
   }
 }
 
