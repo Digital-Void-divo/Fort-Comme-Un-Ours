@@ -27,21 +27,21 @@ registerButton('panel_log', async (interaction) => {
 
 registerButton('panel_calc', async (interaction) => {
   await interaction.reply({
-    content: 'Use these calculator commands:\n• `/calc bmi` — BMI Calculator\n• `/calc tdee` — TDEE / BMR Calculator\n• `/calc 1rm` — 1 Rep Max Calculator',
+    content: 'Use these calculator commands:\n• `/calc bmi` - BMI Calculator\n• `/calc tdee` - TDEE / BMR Calculator\n• `/calc 1rm` - 1 Rep Max Calculator',
     ephemeral: true,
   });
 });
 
 registerButton('panel_challenge', async (interaction) => {
   await interaction.reply({
-    content: 'Use these challenge commands:\n• `/challenge create` — Start a new challenge\n• `/challenge list` — View active challenges\n• `/challenge submit` — Log challenge progress\n• `/challenge leaderboard` — View rankings',
+    content: 'Use these challenge commands:\n• `/challenge create` - Start a new challenge\n• `/challenge list` - View active challenges\n• `/challenge submit` - Log challenge progress\n• `/challenge leaderboard` - View rankings',
     ephemeral: true,
   });
 });
 
 registerButton('panel_social', async (interaction) => {
   await interaction.reply({
-    content: 'Social features:\n• `/leaderboard` — Server fitness rankings\n• `/partner request` — Find an accountability partner\n• `/milestones` — View earned milestones & roles',
+    content: 'Social features:\n• `/leaderboard` - Server fitness rankings\n• `/partner request` - Find an accountability partner\n• `/milestones` - View earned milestones & roles',
     ephemeral: true,
   });
 });
@@ -52,7 +52,7 @@ const FEATURE_SECTIONS = [
   {
     name: '🏋️ Workout Tracking',
     commands: [
-      { cmd: '/fitness', desc: 'Open the fitness hub — access all features from one place' },
+      { cmd: '/fitness', desc: 'Open the fitness hub - access all features from one place' },
       { cmd: '/log', desc: 'Log an exercise with sets, reps, and weight' },
       { cmd: '/history', desc: 'View your workout history' },
       { cmd: '/pr', desc: 'View your personal records' },
@@ -104,11 +104,11 @@ const FEATURE_SECTIONS = [
 
 function buildPanelEmbeds() {
   const main = new EmbedBuilder()
-    .setTitle('🐻 Fort Comme Un Ours — Fitness Tracker')
+    .setTitle('🐻 Fort Comme Un Ours - Fitness Tracker')
     .setDescription(
       '*Strong as a Bear*\n\n' +
-      'Your complete fitness companion for Discord. Track workouts, set goals, ' +
-      'join challenges, and crush your fitness journey with your server.\n\n' +
+      'Track workouts, set goals, ' +
+      'join challenges, and get stronger with your server.\n\n' +
       '**Getting Started:** Use the buttons below or run `/fitness` to open the hub.\n' +
       'All responses are **private to you** unless you choose to publish them.'
     )
@@ -116,7 +116,7 @@ function buildPanelEmbeds() {
     .setTimestamp();
 
   for (const section of FEATURE_SECTIONS) {
-    const lines = section.commands.map(c => `\`${c.cmd}\` — ${c.desc}`).join('\n');
+    const lines = section.commands.map(c => `\`${c.cmd}\` - ${c.desc}`).join('\n');
     main.addFields({ name: section.name, value: lines });
   }
 
@@ -193,7 +193,7 @@ module.exports = {
 
       let confirmMsg = `Panel posted in <#${targetChannel.id}>!`;
       if (fitnessRole) {
-        confirmMsg += `\nFitness role set to ${fitnessRole.toString()} — this role will be pinged when users publish.`;
+        confirmMsg += `\nFitness role set to ${fitnessRole.toString()} - this role will be pinged when users publish.`;
       }
       confirmMsg += '\n\nThe panel buttons will work even after bot restarts.';
 

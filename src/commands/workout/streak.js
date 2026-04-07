@@ -23,7 +23,7 @@ module.exports = {
     const next = nextMilestones.find(m => m > streak.current_streak) || 365;
 
     const e = new EmbedBuilder()
-      .setTitle(`Workout Streak — ${target.displayName}`)
+      .setTitle(`Workout Streak - ${target.displayName}`)
       .setColor(streak.current_streak >= 7 ? COLORS.fire : COLORS.primary)
       .addFields(
         { name: 'Current Streak', value: `**${streak.current_streak}** day(s) ${fireEmoji}`, inline: true },

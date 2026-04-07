@@ -104,7 +104,7 @@ module.exports = {
 
     // Build embed
     const e = new EmbedBuilder()
-      .setTitle(`📊 ${target.displayName} — ${periodLabel}`)
+      .setTitle(`📊 ${target.displayName} - ${periodLabel}`)
       .setThumbnail(target.displayAvatarURL())
       .setColor(COLORS.primary)
       .setTimestamp();

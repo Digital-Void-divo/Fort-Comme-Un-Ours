@@ -12,7 +12,7 @@ module.exports = {
 
     const e = new EmbedBuilder()
       .setTitle('💪 Motivational Quote')
-      .setDescription(`*"${quote.text}"*\n\n— **${quote.author}**`)
+      .setDescription(`*"${quote.text}"*\n\n- **${quote.author}**`)
       .setColor(COLORS.gold)
       .setTimestamp();
 

@@ -58,7 +58,7 @@ module.exports = {
     tips: [
       'Keep the bar close to your body throughout',
       'Hinge at the hips, don\'t squat the weight up',
-      'Maintain a neutral spine — no rounding',
+      'Maintain a neutral spine - no rounding',
       'Lock out by squeezing your glutes at the top',
     ],
     category: 'pull',
@@ -79,7 +79,7 @@ module.exports = {
     tips: [
       'Start from a dead hang with arms fully extended',
       'Pull your chest to the bar, not your chin',
-      'Control the descent — no dropping',
+      'Control the descent - no dropping',
     ],
     category: 'pull',
     equipment: 'bodyweight',
@@ -97,7 +97,7 @@ module.exports = {
   'seated cable row': {
     muscles: ['Back', 'Biceps'],
     tips: [
-      'Keep your torso upright — don\'t lean too far back',
+      'Keep your torso upright - don\'t lean too far back',
       'Squeeze shoulder blades together at contraction',
       'Control the return phase',
     ],
@@ -173,7 +173,7 @@ module.exports = {
     muscles: ['Biceps', 'Brachialis', 'Forearms'],
     tips: [
       'Keep palms facing each other throughout',
-      'Don\'t swing — strict form',
+      'Don\'t swing - strict form',
     ],
     category: 'pull',
     equipment: 'dumbbell',
@@ -185,7 +185,7 @@ module.exports = {
     tips: [
       'Keep your chest up and core braced',
       'Push your knees out in line with your toes',
-      'Aim for parallel or below — hip crease below knee',
+      'Aim for parallel or below - hip crease below knee',
       'Drive through your whole foot, not just toes',
     ],
     category: 'legs',
@@ -216,7 +216,7 @@ module.exports = {
   'leg curl': {
     muscles: ['Hamstrings'],
     tips: [
-      'Control the weight — don\'t let it snap back',
+      'Control the weight - don\'t let it snap back',
       'Full range of motion: fully extend and fully curl',
     ],
     category: 'legs',
@@ -227,7 +227,7 @@ module.exports = {
     tips: [
       'Squeeze at the top for a second',
       'Control the weight on the way down',
-      'Don\'t use heavy weight — protect your knees',
+      'Don\'t use heavy weight - protect your knees',
     ],
     category: 'legs',
     equipment: 'machine',
@@ -237,7 +237,7 @@ module.exports = {
     tips: [
       'Full range of motion: stretch at the bottom, squeeze at the top',
       'Hold at the top for 1-2 seconds',
-      'Go slow — calves respond to time under tension',
+      'Go slow - calves respond to time under tension',
     ],
     category: 'legs',
     equipment: 'machine',
@@ -269,7 +269,7 @@ module.exports = {
     tips: [
       'Keep your body in a straight line',
       'Don\'t let your hips sag or pike up',
-      'Breathe normally — don\'t hold your breath',
+      'Breathe normally - don\'t hold your breath',
     ],
     category: 'core',
     equipment: 'bodyweight',
@@ -287,7 +287,7 @@ module.exports = {
   'hanging leg raise': {
     muscles: ['Lower Abs', 'Hip Flexors'],
     tips: [
-      'Minimize swinging — control the movement',
+      'Minimize swinging - control the movement',
       'Raise legs to at least parallel',
       'Slow descent is key',
     ],
@@ -309,7 +309,7 @@ module.exports = {
     tips: [
       'Start from your knees until you build strength',
       'Roll out as far as you can control',
-      'Squeeze your abs to pull back — don\'t use your hips',
+      'Squeeze your abs to pull back - don\'t use your hips',
     ],
     category: 'core',
     equipment: 'bodyweight',

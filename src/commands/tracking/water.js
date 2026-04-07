@@ -94,11 +94,11 @@ module.exports = {
 
       const timeline = entries.map(e => {
         const time = new Date(e.created_at * 1000).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-        return `\`${time}\` — ${e.amount_ml}ml`;
+        return `\`${time}\` - ${e.amount_ml}ml`;
       }).join('\n') || 'No water logged today.';
 
       const e = new EmbedBuilder()
-        .setTitle('💧 Water Intake — Today')
+        .setTitle('💧 Water Intake - Today')
         .setDescription(timeline)
         .addFields(
           { name: 'Total', value: `${total.total}ml / ${goal}ml`, inline: true },

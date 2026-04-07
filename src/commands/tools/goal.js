@@ -208,7 +208,7 @@ module.exports = {
       }
 
       const e = new EmbedBuilder()
-        .setTitle(`🎯 Goals — ${target.displayName}`)
+        .setTitle(`🎯 Goals - ${target.displayName}`)
         .setColor(COLORS.primary)
         .setTimestamp();
 
@@ -222,7 +222,7 @@ module.exports = {
           const announced = JSON.parse(g.milestones_announced || '[]');
           if (announced.length > 0) value += `\nMilestones: ${announced.map(p => `${p}%`).join(', ')}`;
         }
-        e.addFields({ name: `#${g.id} — ${g.title}`, value });
+        e.addFields({ name: `#${g.id} - ${g.title}`, value });
       }
 
       const key = `goals|${target.id}|${Date.now()}`;

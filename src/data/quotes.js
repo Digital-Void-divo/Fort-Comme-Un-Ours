@@ -44,7 +44,7 @@ module.exports = [
   { text: "The gym is not just about building a better body. It's about building a better mind.", author: "Unknown" },
   { text: "Strive for progress, not perfection.", author: "Unknown" },
   { text: "If it doesn't challenge you, it doesn't change you.", author: "Fred DeVito" },
-  { text: "We do not stop exercising because we grow old — we grow old because we stop exercising.", author: "Kenneth Cooper" },
+  { text: "We do not stop exercising because we grow old - we grow old because we stop exercising.", author: "Kenneth Cooper" },
   { text: "Fitness is not about being better than someone else. It's about being better than you used to be.", author: "Khloe Kardashian" },
   { text: "The real workout starts when you want to stop.", author: "Ronnie Coleman" },
   { text: "There is no magic pill. Consistency and effort over time is the real magic.", author: "Unknown" },
@@ -63,6 +63,6 @@ module.exports = [
   { text: "Make yourself stronger than your excuses.", author: "Unknown" },
   { text: "Some people want it to happen, some wish it would happen, others make it happen.", author: "Michael Jordan" },
   { text: "Today I will do what others won't, so tomorrow I can do what others can't.", author: "Jerry Rice" },
-  { text: "Champions aren't made in gyms. Champions are made from something they have deep inside them — a desire, a dream, a vision.", author: "Muhammad Ali" },
+  { text: "Champions aren't made in gyms. Champions are made from something they have deep inside them - a desire, a dream, a vision.", author: "Muhammad Ali" },
   { text: "You can have results or excuses. Not both.", author: "Arnold Schwarzenegger" },
 ];

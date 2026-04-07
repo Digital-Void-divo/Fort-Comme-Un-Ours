@@ -37,7 +37,7 @@ module.exports = {
     }
 
     const e = new EmbedBuilder()
-      .setTitle(`🏆 Personal Records — ${target.displayName}`)
+      .setTitle(`🏆 Personal Records - ${target.displayName}`)
       .setColor(COLORS.gold)
       .setTimestamp();
 

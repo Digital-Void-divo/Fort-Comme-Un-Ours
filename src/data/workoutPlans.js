@@ -102,7 +102,7 @@ module.exports = {
 
   bro_split: {
     name: '5-Day Bro Split',
-    description: 'Classic bodybuilding split — one major muscle group per day.',
+    description: 'Classic bodybuilding split - one major muscle group per day.',
     days: {
       'Chest Day': [
         { exercise: 'Bench Press', sets: 4, reps: '6-8' },

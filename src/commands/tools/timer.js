@@ -2,7 +2,7 @@ const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, Butt
 const { COLORS, embed } = require('../../utils/helpers');
 const { registerButton } = require('../../services/buttonHandler');
 
-// Active timers stored in memory (not persisted — they're short-lived)
+// Active timers stored in memory (not persisted - they're short-lived)
 const activeTimers = new Map();
 
 registerButton('timer_cancel', async (interaction) => {
@@ -61,7 +61,7 @@ module.exports = {
     const timeout = setTimeout(async () => {
       activeTimers.delete(key);
       try {
-        const doneEmbed = embed('⏱️ Rest Over!', `<@${interaction.user.id}> Your **${seconds}s** rest is over — get back to it!`, COLORS.fire);
+        const doneEmbed = embed('⏱️ Rest Over!', `<@${interaction.user.id}> Your **${seconds}s** rest is over - get back to it!`, COLORS.fire);
         await interaction.followUp({ content: `<@${interaction.user.id}>`, embeds: [doneEmbed] });
         // Remove cancel button
         await interaction.editReply({ components: [] });

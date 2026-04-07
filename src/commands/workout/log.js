@@ -101,7 +101,7 @@ module.exports = {
     try {
       const newMilestones = await checkMilestones(interaction.user.id, interaction.guildId, interaction.guild);
       for (const ms of newMilestones) {
-        e.addFields({ name: '🏅 Milestone Unlocked!', value: `**${ms.name}** — Keep it up!` });
+        e.addFields({ name: '🏅 Milestone Unlocked!', value: `**${ms.name}** - Keep it up!` });
       }
     } catch (err) {
       console.error('Milestone check failed:', err.message);

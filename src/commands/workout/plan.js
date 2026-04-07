@@ -28,7 +28,7 @@ module.exports = {
 
     for (const [dayName, exercises] of Object.entries(plan.days)) {
       const lines = exercises.map(ex =>
-        `• **${ex.exercise}** — ${ex.sets} x ${ex.reps}`
+        `• **${ex.exercise}** - ${ex.sets} x ${ex.reps}`
       ).join('\n');
       e.addFields({ name: dayName, value: lines });
     }

@@ -35,7 +35,7 @@ module.exports = {
       ).run(interaction.user.id, interaction.guildId, hours, quality, notes);
 
       const color = hours >= 7 ? COLORS.success : hours >= 5 ? COLORS.warning : COLORS.error;
-      const verdict = hours >= 8 ? 'Great rest!' : hours >= 7 ? 'Solid night.' : hours >= 5 ? 'A bit short — aim for 7-9h.' : 'Very low — recovery will suffer.';
+      const verdict = hours >= 8 ? 'Great rest!' : hours >= 7 ? 'Solid night.' : hours >= 5 ? 'A bit short - aim for 7-9h.' : 'Very low - recovery will suffer.';
 
       const fields = [`**Hours:** ${hours}h`];
       if (quality) fields.push(`**Quality:** ${'⭐'.repeat(quality)}${'☆'.repeat(5 - quality)}`);
@@ -82,7 +82,7 @@ module.exports = {
       }).join('\n');
 
       const e = new EmbedBuilder()
-        .setTitle(`😴 Sleep Stats — Last ${days} Days`)
+        .setTitle(`😴 Sleep Stats - Last ${days} Days`)
         .setDescription(chart)
         .addFields(
           { name: 'Avg Hours', value: `${avgHours.toFixed(1)}h`, inline: true },

@@ -11,7 +11,7 @@ function loadScheduledJobs(client) {
   // Water reminders every 2 hours
   jobs.push(cron.schedule('0 */2 * * *', () => sendWaterReminders(client)));
 
-  // Workout reminders — check once per minute, fire those whose cron matches
+  // Workout reminders - check once per minute, fire those whose cron matches
   jobs.push(cron.schedule('* * * * *', () => fireWorkoutReminders(client)));
 
   // End expired challenges daily at midnight
@@ -52,7 +52,7 @@ async function sendMotivationalQuote(client) {
     if (channel) {
       try {
         await channel.send({
-          embeds: [embed('Quote of the Day', `*"${quote.text}"*\n\n— ${quote.author}`, COLORS.gold)]
+          embeds: [embed('Quote of the Day', `*"${quote.text}"*\n\n- ${quote.author}`, COLORS.gold)]
         });
       } catch (err) {
         console.error(`Failed to send quote to ${channel.id}:`, err.message);
@@ -148,7 +148,7 @@ async function endExpiredChallenges(client) {
         if (channel) {
           const medals = ['first_place', 'second_place', 'third_place'];
           const results = entries.map((e, i) =>
-            `:${medals[i] || 'medal'}: <@${e.user_id}> — ${e.value}`
+            `:${medals[i] || 'medal'}: <@${e.user_id}> - ${e.value}`
           ).join('\n');
           await channel.send({
             embeds: [embed(`Challenge Complete: ${challenge.title}`, `Results:\n${results}`, COLORS.gold)]

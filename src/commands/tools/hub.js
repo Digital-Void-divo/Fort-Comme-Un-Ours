@@ -207,9 +207,9 @@ function buildHubHome(userId, guildId, user) {
   const privLabel = (profile?.is_public ?? 1) ? 'Public 🌐' : 'Private 🔒';
 
   const e = new EmbedBuilder()
-    .setTitle(`🐻 Fitness Hub — ${user.displayName}`)
+    .setTitle(`🐻 Fitness Hub - ${user.displayName}`)
     .setDescription(
-      'Your all-in-one fitness dashboard. Select a feature below.\n' +
+      'Select a feature below to get started.\n' +
       'All responses are **private** unless you publish them.'
     )
     .addFields(
@@ -256,7 +256,7 @@ function buildQuickStats(userId, guildId, user) {
   const latestSleep = db.prepare('SELECT hours, quality FROM sleep_logs WHERE user_id = ? AND guild_id = ? ORDER BY created_at DESC LIMIT 1').get(userId, guildId);
 
   const e = new EmbedBuilder()
-    .setTitle(`📊 Quick Stats — ${user.displayName}`)
+    .setTitle(`📊 Quick Stats - ${user.displayName}`)
     .setColor(COLORS.primary)
     .setThumbnail(user.displayAvatarURL())
     .addFields(
@@ -282,7 +282,7 @@ function buildGoalsView(userId, guildId, user) {
   const goals = db.prepare('SELECT * FROM goals WHERE user_id = ? AND guild_id = ? ORDER BY completed ASC, created_at DESC').all(userId, guildId);
 
   const e = new EmbedBuilder()
-    .setTitle(`🎯 Goals — ${user.displayName}`)
+    .setTitle(`🎯 Goals - ${user.displayName}`)
     .setColor(COLORS.gold)
     .setTimestamp();
 
@@ -303,7 +303,7 @@ function buildGoalsView(userId, guildId, user) {
       const announced = JSON.parse(g.milestones_announced || '[]');
       if (announced.length > 0) value += `\nMilestones hit: ${announced.map(p => `${p}%`).join(', ')}`;
     }
-    e.addFields({ name: `#${g.id} — ${g.title}`, value });
+    e.addFields({ name: `#${g.id} - ${g.title}`, value });
   }
 
   // Add delete/complete buttons for active goals (up to 5)
@@ -350,7 +350,7 @@ function buildHistoryView(userId, guildId, user, ws) {
   const label = `${wsDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} – ${weDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
 
   const e = new EmbedBuilder()
-    .setTitle(`📅 ${user.displayName} — Week of ${label}`)
+    .setTitle(`📅 ${user.displayName} - Week of ${label}`)
     .setColor(COLORS.primary)
     .setTimestamp();
 
@@ -365,7 +365,7 @@ function buildHistoryView(userId, guildId, user, ws) {
       const name = w.exercise.split(' ').map(w => w[0].toUpperCase() + w.slice(1)).join(' ');
       let detail = `${w.sets}x${w.reps}`;
       if (w.weight > 0) detail += ` @ ${w.weight}${w.weight_unit}`;
-      return `**${date}** [${w.category || '?'}] ${name} — ${detail}`;
+      return `**${date}** [${w.category || '?'}] ${name} - ${detail}`;
     }).join('\n');
     e.addFields({ name: '🏋️ Workouts', value: lines });
   } else {
@@ -416,7 +416,7 @@ function buildWorkoutLogView(userId, guildId, user, page) {
   ).all(userId, guildId, PAGE_SIZE, page * PAGE_SIZE);
 
   const e = new EmbedBuilder()
-    .setTitle(`🏋️ ${user.displayName} — Workout Log`)
+    .setTitle(`🏋️ ${user.displayName} - Workout Log`)
     .setDescription(`Page ${page + 1} of ${maxPage + 1} · ${total} total entries`)
     .setColor(COLORS.primary)
     .setTimestamp();
@@ -428,7 +428,7 @@ function buildWorkoutLogView(userId, guildId, user, page) {
     if (w.weight > 0) value += ` @ ${w.weight} ${w.weight_unit}`;
     if (w.details) value += `\n${w.details}`;
     if (w.notes) value += `\n*${w.notes}*`;
-    e.addFields({ name: `[${w.category || '?'}] ${name} — ${date}`, value });
+    e.addFields({ name: `[${w.category || '?'}] ${name} - ${date}`, value });
   }
 
   if (workouts.length === 0) {
@@ -491,7 +491,7 @@ async function openFitnessHub(interaction) {
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('fitness')
-    .setDescription('Open the fitness hub — access all features from one place'),
+    .setDescription('Open the fitness hub - access all features from one place'),
 
   async execute(interaction) {
     await interaction.deferReply({ ephemeral: true });

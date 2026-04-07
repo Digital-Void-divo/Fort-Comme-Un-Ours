@@ -37,7 +37,7 @@ module.exports = {
     }
 
     const e = new EmbedBuilder()
-      .setTitle(`🏅 Milestones — ${target.displayName}`)
+      .setTitle(`🏅 Milestones - ${target.displayName}`)
       .addFields(
         { name: 'Workout Milestones', value: workoutLines.join('\n') || 'None', inline: true },
         { name: 'Streak Milestones', value: streakLines.join('\n') || 'None', inline: true },

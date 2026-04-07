@@ -111,7 +111,7 @@ module.exports = {
       ).get(target.id, interaction.guildId);
 
       const e = new EmbedBuilder()
-        .setTitle(`💪 Fitness Profile — ${target.displayName}`)
+        .setTitle(`💪 Fitness Profile - ${target.displayName}`)
         .setThumbnail(target.displayAvatarURL())
         .setColor(COLORS.primary)
         .addFields(

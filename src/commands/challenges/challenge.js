@@ -158,7 +158,7 @@ module.exports = {
       for (const c of challenges) {
         const endsIn = Math.max(0, Math.ceil((c.end_date - Date.now() / 1000) / 86400));
         e.addFields({
-          name: `#${c.id} — ${c.title}`,
+          name: `#${c.id} - ${c.title}`,
           value: `Type: ${c.challenge_type} | ${c.participants} participant(s) | ${endsIn} day(s) left${c.target_value ? ` | Target: ${c.target_value}` : ''}`,
         });
       }
@@ -185,7 +185,7 @@ module.exports = {
       const medals = ['🥇', '🥈', '🥉'];
       const lines = entries.map((e, i) => {
         const prefix = medals[i] || `\`${i + 1}.\``;
-        return `${prefix} <@${e.user_id}> — **${e.value}**`;
+        return `${prefix} <@${e.user_id}> - **${e.value}**`;
       }).join('\n');
 
       const e = new EmbedBuilder()

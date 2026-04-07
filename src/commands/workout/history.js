@@ -43,7 +43,7 @@ module.exports = {
     }
 
     const e = new EmbedBuilder()
-      .setTitle(`Workout History — ${target.displayName}`)
+      .setTitle(`Workout History - ${target.displayName}`)
       .setColor(COLORS.primary)
       .setDescription(`Last ${days} day(s) · ${workouts.length} exercise(s) logged`)
       .setTimestamp();
@@ -55,7 +55,7 @@ module.exports = {
       if (w.weight > 0) value += ` @ ${w.weight} ${w.weight_unit}`;
       if (w.details) value += `\n${w.details}`;
       if (w.notes) value += `\n*${w.notes}*`;
-      e.addFields({ name: `[${w.category || '?'}] ${name} — ${date}`, value, inline: true });
+      e.addFields({ name: `[${w.category || '?'}] ${name} - ${date}`, value, inline: true });
     }
 
     if (workouts.length > 15) {

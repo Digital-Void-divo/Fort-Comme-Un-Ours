@@ -65,7 +65,7 @@ module.exports = {
     const lines = rows.map((r, i) => {
       const prefix = medals[i] || `\`${i + 1}.\``;
       const val = type === 'water' ? `${(r.value / 1000).toFixed(1)}L` : `${Math.round(r.value).toLocaleString()} ${valueLabel}`;
-      return `${prefix} <@${r.user_id}> — **${val}**`;
+      return `${prefix} <@${r.user_id}> - **${val}**`;
     }).join('\n');
 
     const e = new EmbedBuilder()

@@ -88,7 +88,7 @@ module.exports = {
       }
 
       const lines = reminders.map(r => {
-        return `**#${r.id}** — \`${r.cron_expression}\` (${r.reminder_type})\n> ${r.message || 'Default reminder'}`;
+        return `**#${r.id}** - \`${r.cron_expression}\` (${r.reminder_type})\n> ${r.message || 'Default reminder'}`;
       }).join('\n\n');
 
       await interaction.reply({

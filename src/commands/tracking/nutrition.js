@@ -91,12 +91,12 @@ module.exports = {
       const foodList = entries.length > 0
         ? entries.map(e => {
             const time = new Date(e.created_at * 1000).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-            return `\`${time}\` **${e.food_name}** — ${e.calories} kcal`;
+            return `\`${time}\` **${e.food_name}** - ${e.calories} kcal`;
           }).join('\n')
         : 'No food logged today.';
 
       const e = new EmbedBuilder()
-        .setTitle('🍽️ Nutrition — Today')
+        .setTitle('🍽️ Nutrition - Today')
         .setDescription(foodList)
         .setColor(COLORS.primary)
         .setTimestamp();
