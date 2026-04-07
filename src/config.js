@@ -14,6 +14,4 @@ module.exports = {
   clientId: process.env.CLIENT_ID,
   guildId: process.env.GUILD_ID || null,
   dbPath: process.env.DB_PATH || './fitness.db',
-  nutritionixAppId: process.env.NUTRITIONIX_APP_ID || null,
-  nutritionixApiKey: process.env.NUTRITIONIX_API_KEY || null,
 };
