@@ -1,8 +1,12 @@
 const { SlashCommandBuilder } = require('discord.js');
 const { getDb } = require('../../services/database');
-const { checkAndUpdatePR } = require('../../services/prService');
+const prService = require('../../services/prService');
 const { updateStreak } = require('../../services/streakService');
-const { successEmbed, publishButton, COLORS } = require('../../utils/helpers');
+const sessions = require('../../services/sessionService');
+const buddies = require('../../services/buddyService');
+const privacy = require('../../services/privacyService');
+const audit = require('../../services/auditService');
+const { successEmbed, publishButton, safeDM } = require('../../utils/helpers');
 const { checkMilestones } = require('../../services/roleRewards');
 const { cacheEmbed } = require('../../services/buttonHandler');
 const exercises = require('../../data/exercises');
@@ -61,9 +65,12 @@ module.exports = {
     const notes = interaction.options.getString('notes') || null;
 
     const db = getDb();
+    // Auto-link to active session if any.
+    const activeSession = sessions.getActiveSession(interaction.user.id, interaction.guildId);
     db.prepare(
-      'INSERT INTO workouts (user_id, guild_id, exercise, category, sets, reps, weight, weight_unit, details, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
-    ).run(interaction.user.id, interaction.guildId, exercise, category, sets, reps, weight, unit, details, notes);
+      'INSERT INTO workouts (user_id, guild_id, exercise, category, sets, reps, weight, weight_unit, details, notes, session_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+    ).run(interaction.user.id, interaction.guildId, exercise, category, sets, reps, weight, unit, details, notes, activeSession?.id || null);
+    audit.log(interaction.guildId, interaction.user.id, 'workout.log', { exercise, sets, reps, weight, sessionId: activeSession?.id });
 
     const streak = updateStreak(interaction.user.id, interaction.guildId);
     const exerciseTitle = exercise.split(' ').map(w => w[0].toUpperCase() + w.slice(1)).join(' ');
@@ -77,27 +84,40 @@ module.exports = {
     if (details) fields.push(`**Details:** ${details}`);
     if (notes) fields.push(`**Notes:** ${notes}`);
     fields.push(`**Streak:** ${streak.current} day(s) ${streak.current >= 7 ? '🔥' : ''}`);
+    if (activeSession) fields.push(`**Session:** linked to active session #${activeSession.id}`);
 
     const e = successEmbed('Workout Logged!', fields.join('\n'));
 
-    // Check for PR
+    // PR suggestion: if heavier than current approved best, suggest /pr submit (no auto self-attest).
     if (weight > 0) {
-      const pr = checkAndUpdatePR(interaction.user.id, interaction.guildId, exercise, weight, unit, reps);
-      if (pr.isNew) {
-        const prMsg = pr.previous
-          ? `New PR for **${exerciseTitle}**! ${pr.previous.weight} ${pr.previous.unit} → **${weight} ${unit}** 🏆`
-          : `First PR recorded for **${exerciseTitle}**: **${weight} ${unit}** 🏆`;
-        e.addFields({ name: '🏆 Personal Record!', value: prMsg });
+      const best = prService.bestApproved(interaction.user.id, interaction.guildId, exercise);
+      const bestLbs = best ? (best.weight_unit === 'kg' ? best.weight / 0.453592 : best.weight) : 0;
+      const newLbs = unit === 'kg' ? weight / 0.453592 : weight;
+      if (newLbs > bestLbs) {
+        e.addFields({
+          name: '🏆 Possible PR',
+          value: best
+            ? `That beats your validated best of ${best.weight} ${best.weight_unit} × ${best.reps}. Use \`/pr submit\` to have a buddy validate it.`
+            : 'No validated PR yet for this lift. Use `/pr submit` to log this for buddy validation.',
+        });
       }
     }
 
-    // Check for milestone streaks
+    // Streak milestones
     const milestoneStreaks = [7, 14, 30, 60, 90, 100, 180, 365];
     if (milestoneStreaks.includes(streak.current)) {
       e.addFields({ name: '🎉 Streak Milestone!', value: `You've worked out ${streak.current} days in a row!` });
     }
 
-    // Check for role reward milestones
+    // Shield earned this log?
+    if (streak.shieldEarned) {
+      e.addFields({
+        name: '🛡️ Streak Shield Earned',
+        value: `You now have **${streak.shieldsAvailable}** shield(s). One shield will absorb a missed day so your streak survives.`,
+      });
+    }
+
+    // Role reward milestones
     try {
       const newMilestones = await checkMilestones(interaction.user.id, interaction.guildId, interaction.guild);
       for (const ms of newMilestones) {
@@ -107,24 +127,27 @@ module.exports = {
       console.error('Milestone check failed:', err.message);
     }
 
-    // Notify accountability partner via DM
+    // Notify buddies (multi-buddy, privacy-aware)
     try {
-      const pair = db.prepare(
-        'SELECT * FROM accountability_pairs WHERE guild_id = ? AND (user1_id = ? OR user2_id = ?) AND active = 1'
-      ).get(interaction.guildId, interaction.user.id, interaction.user.id);
-      if (pair) {
-        const partnerId = pair.user1_id === interaction.user.id ? pair.user2_id : pair.user1_id;
-        const partner = await interaction.guild.members.fetch(partnerId);
-        const { safeDM } = require('../../utils/helpers');
-        await safeDM(partner.user, {
-          embeds: [successEmbed('Partner Workout!', `Your accountability partner **${interaction.user.displayName}** just logged **${exerciseTitle}** (${sets}x${reps}${weight > 0 ? ` @ ${weight}${unit}` : ''})! Don't fall behind! 💪`)]
-        });
+      const senderSettings = privacy.getSettings(interaction.user.id, interaction.guildId);
+      if (senderSettings.notifyBuddyOnWorkout) {
+        const buddyIds = buddies.getActiveBuddyIds(interaction.user.id, interaction.guildId);
+        for (const bid of buddyIds) {
+          try {
+            const member = await interaction.guild.members.fetch(bid);
+            await safeDM(member.user, {
+              embeds: [successEmbed(
+                'Buddy Workout!',
+                `Your accountability buddy **${interaction.user.displayName}** just logged **${exerciseTitle}** (${sets}x${reps}${weight > 0 ? ` @ ${weight}${unit}` : ''}). Don't fall behind! 💪`
+              )],
+            });
+          } catch { /* ignore */ }
+        }
       }
     } catch (err) {
-      console.error('Partner notification failed:', err.message);
+      console.error('Buddy notification failed:', err.message);
     }
 
-    // Cache for publish
     const key = `log|${interaction.user.id}|${Date.now()}`;
     cacheEmbed(key, [e], interaction.guildId);
 

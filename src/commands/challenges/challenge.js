@@ -1,7 +1,9 @@
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const { getDb } = require('../../services/database');
-const { COLORS, embed } = require('../../utils/helpers');
+const { COLORS, embed, safeDM } = require('../../utils/helpers');
 const { registerButton } = require('../../services/buttonHandler');
+const buddies = require('../../services/buddyService');
+const audit = require('../../services/auditService');
 
 // Register button handlers
 registerButton('join_challenge', async (interaction) => {
@@ -61,7 +63,25 @@ module.exports = {
       sub.setName('leaderboard')
         .setDescription('View challenge leaderboard')
         .addIntegerOption(opt =>
-          opt.setName('challenge_id').setDescription('Challenge ID').setRequired(true))),
+          opt.setName('challenge_id').setDescription('Challenge ID').setRequired(true)))
+    .addSubcommand(sub =>
+      sub.setName('buddy')
+        .setDescription('Start a private challenge with one of your buddies')
+        .addUserOption(opt =>
+          opt.setName('buddy').setDescription('Buddy to challenge').setRequired(true))
+        .addStringOption(opt =>
+          opt.setName('title').setDescription('Challenge title').setRequired(true))
+        .addStringOption(opt =>
+          opt.setName('type').setDescription('Challenge type').setRequired(true).addChoices(
+            { name: 'Total Reps', value: 'reps' },
+            { name: 'Total Steps', value: 'steps' },
+            { name: 'Total Duration (minutes)', value: 'duration' },
+            { name: 'Streak (consecutive days)', value: 'streak' },
+          ))
+        .addIntegerOption(opt =>
+          opt.setName('days').setDescription('Duration in days').setRequired(true).setMinValue(1).setMaxValue(90))
+        .addNumberOption(opt =>
+          opt.setName('target').setDescription('Target value to hit'))),
 
   async execute(interaction) {
     const sub = interaction.options.getSubcommand();
@@ -164,6 +184,52 @@ module.exports = {
       }
 
       await interaction.editReply({ embeds: [e] });
+
+    } else if (sub === 'buddy') {
+      await interaction.deferReply({ ephemeral: true });
+      const buddy = interaction.options.getUser('buddy');
+      const title = interaction.options.getString('title');
+      const type = interaction.options.getString('type');
+      const days = interaction.options.getInteger('days');
+      const target = interaction.options.getNumber('target') || null;
+
+      // Verify the user is actually a buddy
+      const isBuddy = buddies.getActiveBuddyIds(interaction.user.id, interaction.guildId).includes(buddy.id);
+      if (!isBuddy) {
+        return interaction.editReply({ content: `${buddy.username} isn't an active accountability buddy. Use \`/partner request\` first.` });
+      }
+
+      const now = Math.floor(Date.now() / 1000);
+      const endDate = now + (days * 86400);
+
+      const result = db.prepare(
+        `INSERT INTO challenges
+           (guild_id, creator_id, title, description, challenge_type, target_value, start_date, end_date, scope, invited_user_id)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'buddy', ?)`
+      ).run(interaction.guildId, interaction.user.id, title, `Private buddy challenge with <@${buddy.id}>`, type, target, now, endDate, buddy.id);
+
+      // Auto-enroll both participants
+      const stmt = db.prepare('INSERT INTO challenge_entries (challenge_id, user_id) VALUES (?, ?)');
+      stmt.run(result.lastInsertRowid, interaction.user.id);
+      stmt.run(result.lastInsertRowid, buddy.id);
+
+      audit.log(interaction.guildId, interaction.user.id, 'challenge.buddy_create', { challengeId: result.lastInsertRowid, opponent: buddy.id });
+
+      const e = new EmbedBuilder()
+        .setTitle(`🤝 Buddy Challenge: ${title}`)
+        .setDescription(`<@${interaction.user.id}> vs <@${buddy.id}>\nType: ${type}${target ? `, target ${target}` : ''}\nLasts ${days} days.`)
+        .addFields({ name: 'ID', value: `#${result.lastInsertRowid}`, inline: true })
+        .setColor(COLORS.fire).setTimestamp();
+
+      await interaction.editReply({ embeds: [e] });
+
+      try {
+        await safeDM(buddy, {
+          embeds: [embed('Buddy Challenge Started',
+            `**${interaction.user.displayName}** started a buddy challenge: **${title}**.\nUse \`/challenge submit challenge_id:${result.lastInsertRowid}\` to log progress.`,
+            COLORS.fire)],
+        });
+      } catch { /* ignore */ }
 
     } else if (sub === 'leaderboard') {
       await interaction.deferReply({ ephemeral: true });
