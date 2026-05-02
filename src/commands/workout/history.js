@@ -20,15 +20,11 @@ module.exports = {
     const since = Math.floor(Date.now() / 1000) - (days * 86400);
 
     // Privacy check
-    if (target.id !== interaction.user.id) {
-      const db = getDb();
-      const profile = db.prepare('SELECT is_public FROM user_profiles WHERE user_id = ? AND guild_id = ?')
-        .get(target.id, interaction.guildId);
-      if (profile && !profile.is_public) {
-        return interaction.editReply({
-          embeds: [embed('Private Profile', `<@${target.id}>'s profile is private.`, COLORS.warning)]
-        });
-      }
+    const privacy = require('../../services/privacyService');
+    if (!privacy.canViewer(interaction.user.id, target.id, interaction.guildId, 'workouts')) {
+      return interaction.editReply({
+        embeds: [embed('Private Profile', `<@${target.id}>'s workout history isn't visible to you.`, COLORS.warning)]
+      });
     }
 
     const db = getDb();

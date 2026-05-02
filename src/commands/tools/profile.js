@@ -75,12 +75,9 @@ module.exports = {
       const target = interaction.options.getUser('user') || interaction.user;
 
       // Privacy check
-      if (target.id !== interaction.user.id) {
-        const privCheck = db.prepare('SELECT is_public FROM user_profiles WHERE user_id = ? AND guild_id = ?')
-          .get(target.id, interaction.guildId);
-        if (privCheck && !privCheck.is_public) {
-          return interaction.editReply({ content: 'This user\'s profile is private.' });
-        }
+      const privacy = require('../../services/privacyService');
+      if (!privacy.canViewer(interaction.user.id, target.id, interaction.guildId, 'profile')) {
+        return interaction.editReply({ content: privacy.denyMessage() });
       }
 
       const profile = db.prepare(

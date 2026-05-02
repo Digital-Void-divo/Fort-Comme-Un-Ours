@@ -59,6 +59,21 @@ module.exports = {
           console.error('Select menu error reply also failed:', replyErr.message);
         }
       }
+
+    // ── Modal submits (routed by customId prefix the same way) ──
+    } else if (interaction.isModalSubmit()) {
+      try {
+        await handleButton(interaction);
+      } catch (error) {
+        console.error('Error handling modal submit:', error);
+        try {
+          if (!interaction.replied && !interaction.deferred) {
+            await interaction.reply({ embeds: [errorEmbed('Form submission failed.')], ephemeral: true });
+          }
+        } catch (replyErr) {
+          console.error('Modal error reply also failed:', replyErr.message);
+        }
+      }
     }
   },
 };

@@ -184,17 +184,38 @@ module.exports = {
         ephemeral: true,
       });
 
+      // Notify buddies on milestone hits or completion
+      try {
+        if (completed || milestoneEvents.length > 0) {
+          const buddies = require('../../services/buddyService');
+          const privacyService = require('../../services/privacyService');
+          const { safeDM } = require('../../utils/helpers');
+          const senderSettings = privacyService.getSettings(interaction.user.id, interaction.guildId);
+          if (senderSettings.notifyBuddyOnGoal) {
+            const buddyIds = buddies.getActiveBuddyIds(interaction.user.id, interaction.guildId);
+            const summary = completed
+              ? `🎉 **${interaction.user.displayName}** completed their goal: **${goal.title}**!`
+              : `📈 **${interaction.user.displayName}** hit ${milestoneEvents.map(p => p + '%').join(', ')} on goal **${goal.title}**.`;
+            for (const bid of buddyIds) {
+              try {
+                const member = await interaction.guild.members.fetch(bid);
+                await safeDM(member.user, { embeds: [embed('Buddy Goal Update', summary, COLORS.gold)] });
+              } catch { /* ignore */ }
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Goal buddy notify failed:', err.message);
+      }
+
     } else if (sub === 'list') {
       await interaction.deferReply({ ephemeral: true });
       const target = interaction.options.getUser('user') || interaction.user;
 
       // Privacy check
-      if (target.id !== interaction.user.id) {
-        const profile = db.prepare('SELECT is_public FROM user_profiles WHERE user_id = ? AND guild_id = ?')
-          .get(target.id, interaction.guildId);
-        if (profile && !profile.is_public) {
-          return interaction.editReply({ content: 'This user\'s profile is private.' });
-        }
+      const privacy = require('../../services/privacyService');
+      if (!privacy.canViewer(interaction.user.id, target.id, interaction.guildId, 'goals')) {
+        return interaction.editReply({ content: privacy.denyMessage() });
       }
 
       const goals = db.prepare(

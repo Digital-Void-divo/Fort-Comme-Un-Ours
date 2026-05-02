@@ -20,10 +20,96 @@ function loadScheduledJobs(client) {
   // Weekly summary on Sunday at 9 AM UTC
   jobs.push(cron.schedule('0 9 * * 0', () => sendWeeklySummaries(client)));
 
+  // Every 15 minutes: check for stale active sessions (>4h) and DM the user.
+  jobs.push(cron.schedule('*/15 * * * *', () => checkStaleSessions(client)));
+
+  // Daily 03:00 UTC: expire stale buddy requests + alert buddies on missed streaks.
+  jobs.push(cron.schedule('0 3 * * *', () => dailyMaintenance(client)));
+
   console.log('Scheduled jobs loaded');
 
   // Process anything that expired while offline
   endExpiredChallenges(client);
+  dailyMaintenance(client);
+}
+
+async function checkStaleSessions(client) {
+  const sessions = require('./sessionService');
+  const { safeDM, embed, COLORS } = require('../utils/helpers');
+  const stale = sessions.staleActive();
+  for (const s of stale) {
+    try {
+      const user = await client.users.fetch(s.user_id);
+      const elapsedH = ((Date.now() / 1000) - s.started_at) / 3600;
+      await safeDM(user, {
+        embeds: [embed(
+          'Still in the gym?',
+          `Your session has been active for ${elapsedH.toFixed(1)} hours. Use \`/session end\` to wrap it up or \`/session cancel\` to abandon it.`,
+          COLORS.warning,
+        )],
+      });
+      sessions.markReminderSent(s.id);
+    } catch (err) {
+      console.error(`Stale-session reminder failed for session ${s.id}:`, err.message);
+    }
+  }
+}
+
+async function dailyMaintenance(client) {
+  try {
+    const buddies = require('./buddyService');
+    const expired = buddies.expireOldPending();
+    if (expired) console.log(`Expired ${expired} old buddy requests`);
+  } catch (err) {
+    console.error('Buddy expiry failed:', err.message);
+  }
+
+  try {
+    await sendMissedStreakAlerts(client);
+  } catch (err) {
+    console.error('Missed streak alerts failed:', err.message);
+  }
+}
+
+async function sendMissedStreakAlerts(client) {
+  const db = getDb();
+  const { todayEpoch } = require('../utils/helpers');
+  const { safeDM, embed: mkEmbed, COLORS: COL } = require('../utils/helpers');
+  const today = todayEpoch();
+
+  // Users who once had a streak but haven't logged in 2+ days.
+  const candidates = db.prepare(
+    `SELECT s.user_id, s.guild_id, s.current_streak, s.last_workout_date, s.shields_available
+       FROM streaks s
+      WHERE s.current_streak > 0 AND s.last_workout_date < ? - 86400`
+  ).all(today);
+
+  for (const c of candidates) {
+    const senderSettings = db.prepare(
+      'SELECT notify_buddy_on_missed_streak FROM user_profiles WHERE user_id = ? AND guild_id = ?'
+    ).get(c.user_id, c.guild_id);
+    if (!senderSettings || !senderSettings.notify_buddy_on_missed_streak) continue;
+
+    const buddyRows = db.prepare(
+      `SELECT CASE WHEN user1_id = ? THEN user2_id ELSE user1_id END AS partner_id
+         FROM accountability_pairs
+        WHERE guild_id = ? AND status = 'active' AND active = 1
+          AND (user1_id = ? OR user2_id = ?)`
+    ).all(c.user_id, c.guild_id, c.user_id, c.user_id);
+
+    for (const b of buddyRows) {
+      try {
+        const partner = await client.users.fetch(b.partner_id);
+        await safeDM(partner, {
+          embeds: [mkEmbed(
+            'Buddy Streak Alert',
+            `Your buddy <@${c.user_id}> hasn't logged a workout in over a day. Their streak of **${c.current_streak}** day(s) is at risk${c.shields_available > 0 ? ` (they have ${c.shields_available} shield(s))` : ''}. Send some encouragement?`,
+            COL.warning,
+          )],
+        });
+      } catch { /* ignore */ }
+    }
+  }
 }
 
 async function sendMotivationalQuote(client) {
