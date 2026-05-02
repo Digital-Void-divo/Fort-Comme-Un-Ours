@@ -1,4 +1,5 @@
 const { getDb } = require('./database');
+const audit = require('./auditService');
 
 const MILESTONES = {
   workouts: [10, 25, 50, 100, 250, 500, 1000],
@@ -74,12 +75,16 @@ async function checkMilestones(userId, guildId, guild) {
   for (const milestone of earned) {
     try {
       const role = guild.roles.cache.find(r => r.name === milestone.name);
-      if (role) {
-        const member = await guild.members.fetch(userId);
-        await member.roles.add(role);
+      if (!role) {
+        audit.log(guildId, userId, 'role.missing', { milestone: milestone.name });
+        continue;
       }
+      const member = await guild.members.fetch(userId);
+      await member.roles.add(role);
+      audit.log(guildId, userId, 'role.assigned', { milestone: milestone.name, roleId: role.id });
     } catch (err) {
       console.error(`Failed to assign role "${milestone.name}" to user ${userId}:`, err.message);
+      audit.log(guildId, userId, 'role.assign_failed', { milestone: milestone.name, error: err.message });
     }
   }
 

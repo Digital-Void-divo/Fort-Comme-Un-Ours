@@ -1,6 +1,7 @@
 const {
   SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle,
 } = require('discord.js');
+const { getDb } = require('../../services/database');
 const prService = require('../../services/prService');
 const buddies = require('../../services/buddyService');
 const privacy = require('../../services/privacyService');
@@ -291,7 +292,7 @@ module.exports = {
 
     if (sub === 'pending') {
       await interaction.deferReply({ ephemeral: true });
-      const mySubs = require('../../services/database').getDb().prepare(
+      const mySubs = getDb().prepare(
         `SELECT * FROM personal_records WHERE user_id = ? AND guild_id = ? AND status = 'pending' ORDER BY created_at DESC`
       ).all(interaction.user.id, interaction.guildId);
       const toValidate = prService.pendingFor(interaction.user.id, interaction.guildId);
@@ -332,7 +333,7 @@ module.exports = {
       if (pr.status !== 'pending') {
         return interaction.reply({ content: 'Only pending submissions can be cancelled.', ephemeral: true });
       }
-      require('../../services/database').getDb().prepare(
+      getDb().prepare(
         `UPDATE personal_records SET status = 'expired' WHERE id = ?`
       ).run(id);
       audit.log(interaction.guildId, interaction.user.id, 'pr.cancel', { prId: id });
