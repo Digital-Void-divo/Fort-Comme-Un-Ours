@@ -78,7 +78,8 @@ async function buildPayload(category, target, guildId, since, format) {
     }
     case 'volume': {
       const rows = db.prepare(
-        `SELECT date(created_at,'unixepoch') as d, COALESCE(SUM(sets*reps*weight),0) as v
+        `SELECT date(created_at,'unixepoch') as d,
+                COALESCE(SUM(sets*reps*(CASE WHEN weight_unit = 'kg' THEN weight/0.453592 ELSE weight END)),0) as v
            FROM workouts WHERE user_id = ? AND guild_id = ? AND created_at >= ? AND weight > 0
            GROUP BY d ORDER BY d`
       ).all(userId, guildId, since);
@@ -245,13 +246,16 @@ async function buildPayload(category, target, guildId, since, format) {
       });
     }
     case 'pr_progress': {
+      // Excluding superseded entries gives a clean progression line per exercise.
       const rows = db.prepare(
         `SELECT created_at, exercise, weight, weight_unit, reps
            FROM personal_records
           WHERE user_id = ? AND guild_id = ? AND status = 'approved'
             AND created_at >= ? AND record_type = 'weight'
+            AND id NOT IN (SELECT superseded_pr_id FROM personal_records
+                            WHERE user_id = ? AND guild_id = ? AND superseded_pr_id IS NOT NULL)
           ORDER BY created_at ASC`
-      ).all(userId, guildId, since);
+      ).all(userId, guildId, since, userId, guildId);
       // Group per exercise, plot lines.
       const byEx = new Map();
       for (const r of rows) {
@@ -368,7 +372,7 @@ module.exports = {
     }
 
     const cacheKey = `report|${target.id}|${Date.now()}`;
-    cacheEmbed(cacheKey, [e], interaction.guildId);
+    cacheEmbed(cacheKey, [e], interaction.guildId, files);
     return interaction.editReply({ embeds: [e], files, components: [publishButton(cacheKey)] });
   },
 };

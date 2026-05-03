@@ -20,6 +20,7 @@ const MILESTONE_ROLES = {
   'streak_60': '60-Day Beast',
   'streak_90': 'Quarter Master',
   'streak_100': 'Century Streak',
+  'streak_180': 'Half-Year Hero',
   'streak_365': 'Year of Iron',
 };
 
@@ -73,6 +74,10 @@ async function checkMilestones(userId, guildId, guild) {
 
   // Try to assign roles for earned milestones
   for (const milestone of earned) {
+    if (!milestone.name) {
+      audit.log(guildId, userId, 'role.missing', { milestone: milestone.key });
+      continue;
+    }
     try {
       const role = guild.roles.cache.find(r => r.name === milestone.name);
       if (!role) {

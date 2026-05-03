@@ -48,9 +48,12 @@ async function checkStaleSessions(client) {
           COLORS.warning,
         )],
       });
-      sessions.markReminderSent(s.id);
     } catch (err) {
       console.error(`Stale-session reminder failed for session ${s.id}:`, err.message);
+    } finally {
+      // Mark sent even on failure — otherwise this session triggers errors every 15 min
+      // (e.g. deleted account, blocked DMs). The user can still /session end manually.
+      sessions.markReminderSent(s.id);
     }
   }
 }
@@ -232,9 +235,9 @@ async function endExpiredChallenges(client) {
         }
 
         if (channel) {
-          const medals = ['first_place', 'second_place', 'third_place'];
+          const medals = ['🥇', '🥈', '🥉'];
           const results = entries.map((e, i) =>
-            `:${medals[i] || 'medal'}: <@${e.user_id}> - ${e.value}`
+            `${medals[i] || '🎖️'} <@${e.user_id}> - ${e.value}`
           ).join('\n');
           await channel.send({
             embeds: [embed(`Challenge Complete: ${challenge.title}`, `Results:\n${results}`, COLORS.gold)]

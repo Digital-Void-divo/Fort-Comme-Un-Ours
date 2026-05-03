@@ -1,6 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const exercises = require('../../data/exercises');
-const { COLORS } = require('../../utils/helpers');
+const { COLORS, titleCase } = require('../../utils/helpers');
 
 // Structured slot templates for coherent workouts
 const TEMPLATES = {
@@ -108,7 +108,7 @@ module.exports = {
       .setTimestamp();
 
     for (const { name, ex, slot } of selected) {
-      const title = name.split(' ').map(w => w[0].toUpperCase() + w.slice(1)).join(' ');
+      const title = titleCase(name);
       const isBodyweight = ex.equipment === 'bodyweight';
       const sets = isBodyweight ? 3 : Math.floor(Math.random() * 2) + 3;
       const reps = isBodyweight ? '10-15' : `${Math.floor(Math.random() * 3) + 6}-${Math.floor(Math.random() * 3) + 9}`;

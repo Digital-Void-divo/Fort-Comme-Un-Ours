@@ -1,6 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const { getDb } = require('../../services/database');
-const { embed, COLORS, publishButton } = require('../../utils/helpers');
+const { embed, COLORS, publishButton, titleCase } = require('../../utils/helpers');
 const { cacheEmbed } = require('../../services/buttonHandler');
 
 module.exports = {
@@ -45,7 +45,7 @@ module.exports = {
       .setTimestamp();
 
     for (const w of workouts.slice(0, 15)) {
-      const name = w.exercise.split(' ').map(word => word[0].toUpperCase() + word.slice(1)).join(' ');
+      const name = titleCase(w.exercise);
       const date = new Date(w.created_at * 1000).toLocaleDateString();
       let value = `${w.sets}x${w.reps}`;
       if (w.weight > 0) value += ` @ ${w.weight} ${w.weight_unit}`;

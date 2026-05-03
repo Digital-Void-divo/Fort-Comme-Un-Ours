@@ -16,10 +16,7 @@ registerButton('panel_fitness', async (interaction) => {
 });
 
 registerButton('panel_log', async (interaction) => {
-  await interaction.deferReply({ ephemeral: true });
-  const logCmd = interaction.client.commands.get('log');
-  // Send them to the quick-log flow
-  await interaction.followUp({
+  await interaction.reply({
     content: 'Use `/log` to log a workout, or `/fitness` for the full hub!',
     ephemeral: true,
   });

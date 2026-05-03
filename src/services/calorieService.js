@@ -22,11 +22,6 @@ const MET_BY_TYPE = {
   other: 5.5,
 };
 
-const INTENSITY_MULTIPLIER = {
-  // 1 (very light) -> 0.6x base, 10 (max) -> 1.4x base
-  // smooth ramp through MET defaults
-};
-
 function metForType(sessionType) {
   const key = (sessionType || '').toLowerCase();
   return MET_BY_TYPE[key] !== undefined ? MET_BY_TYPE[key] : MET_BY_TYPE.other;

@@ -4,7 +4,7 @@ const {
 } = require('discord.js');
 const { getDb } = require('../../services/database');
 const { getStreak } = require('../../services/streakService');
-const { COLORS, embed, progressBar, todayEpoch, weekStartFor } = require('../../utils/helpers');
+const { COLORS, embed, progressBar, todayEpoch, weekStartFor, titleCase } = require('../../utils/helpers');
 const { registerButton } = require('../../services/buttonHandler');
 const { cacheEmbed } = require('../../services/buttonHandler');
 
@@ -362,7 +362,7 @@ function buildHistoryView(userId, guildId, user, ws) {
   if (workouts.length > 0) {
     const lines = workouts.slice(0, 10).map(w => {
       const date = new Date(w.created_at * 1000).toLocaleDateString('en-US', { weekday: 'short' });
-      const name = w.exercise.split(' ').map(w => w[0].toUpperCase() + w.slice(1)).join(' ');
+      const name = titleCase(w.exercise);
       let detail = `${w.sets}x${w.reps}`;
       if (w.weight > 0) detail += ` @ ${w.weight}${w.weight_unit}`;
       return `**${date}** [${w.category || '?'}] ${name} - ${detail}`;
@@ -422,7 +422,7 @@ function buildWorkoutLogView(userId, guildId, user, page) {
     .setTimestamp();
 
   for (const w of workouts) {
-    const name = w.exercise.split(' ').map(word => word[0].toUpperCase() + word.slice(1)).join(' ');
+    const name = titleCase(w.exercise);
     const date = new Date(w.created_at * 1000).toLocaleDateString();
     let value = `${w.sets}x${w.reps}`;
     if (w.weight > 0) value += ` @ ${w.weight} ${w.weight_unit}`;
@@ -459,7 +459,7 @@ function buildWorkoutLogView(userId, guildId, user, page) {
   if (workouts.length > 0) {
     const delRow = new ActionRowBuilder();
     for (const w of workouts.slice(0, 4)) {
-      const label = w.exercise.split(' ').map(word => word[0].toUpperCase() + word.slice(1)).join(' ').slice(0, 15);
+      const label = titleCase(w.exercise).slice(0, 15);
       delRow.addComponents(
         new ButtonBuilder()
           .setCustomId(`wlog_del|${w.id}`)
