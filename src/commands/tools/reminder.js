@@ -60,16 +60,33 @@ module.exports = {
 
       const cronExpr = `${minute} ${hour} * * ${cronDays}`;
 
+      // Schema enforces UNIQUE(user_id, guild_id, reminder_type), so re-running
+      // /reminder set replaces the existing workout reminder rather than crashing.
       const result = db.prepare(
-        "INSERT INTO reminders (user_id, guild_id, channel_id, reminder_type, message, cron_expression) VALUES (?, ?, ?, 'workout', ?, ?)"
+        `INSERT INTO reminders (user_id, guild_id, channel_id, reminder_type, message, cron_expression)
+         VALUES (?, ?, ?, 'workout', ?, ?)
+         ON CONFLICT(user_id, guild_id, reminder_type) DO UPDATE SET
+           channel_id = excluded.channel_id,
+           message = excluded.message,
+           cron_expression = excluded.cron_expression,
+           active = 1`
       ).run(interaction.user.id, interaction.guildId, interaction.channelId, message, cronExpr);
+
+      // lastInsertRowid is 0 when ON CONFLICT updates an existing row; look it up.
+      let reminderId = Number(result.lastInsertRowid);
+      if (!reminderId) {
+        const existing = db.prepare(
+          "SELECT id FROM reminders WHERE user_id = ? AND guild_id = ? AND reminder_type = 'workout'"
+        ).get(interaction.user.id, interaction.guildId);
+        reminderId = existing?.id ?? 0;
+      }
 
       const daysDisplay = days === 'daily' ? 'Every day' : days.toUpperCase();
 
       await interaction.reply({
         embeds: [embed(
           '⏰ Reminder Set',
-          `**Time:** ${time} UTC\n**Days:** ${daysDisplay}\n**Message:** ${message}\n**ID:** #${result.lastInsertRowid}`,
+          `**Time:** ${time} UTC\n**Days:** ${daysDisplay}\n**Message:** ${message}\n**ID:** #${reminderId}`,
           COLORS.success
         )],
         ephemeral: true,

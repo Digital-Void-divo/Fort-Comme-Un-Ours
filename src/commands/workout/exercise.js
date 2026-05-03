@@ -1,6 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const exercises = require('../../data/exercises');
-const { COLORS } = require('../../utils/helpers');
+const { COLORS, titleCase } = require('../../utils/helpers');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -15,7 +15,7 @@ module.exports = {
       const matches = Object.keys(exercises)
         .filter(e => e.includes(focused))
         .slice(0, 25)
-        .map(e => ({ name: e.split(' ').map(w => w[0].toUpperCase() + w.slice(1)).join(' '), value: e }));
+        .map(e => ({ name: titleCase(e), value: e }));
       await interaction.respond(matches);
     } catch (err) {
       console.error('Autocomplete failed:', err.message);
@@ -33,7 +33,7 @@ module.exports = {
       });
     }
 
-    const title = name.split(' ').map(w => w[0].toUpperCase() + w.slice(1)).join(' ');
+    const title = titleCase(name);
     const e = new EmbedBuilder()
       .setTitle(`📖 ${title}`)
       .setColor(COLORS.muscle)

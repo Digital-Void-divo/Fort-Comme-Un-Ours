@@ -7,7 +7,7 @@ const buddies = require('../../services/buddyService');
 const privacy = require('../../services/privacyService');
 const audit = require('../../services/auditService');
 const recordTypes = require('../../data/recordTypes');
-const { COLORS, embed, successEmbed, publishButton, safeDM } = require('../../utils/helpers');
+const { COLORS, embed, successEmbed, publishButton, safeDM, titleCase } = require('../../utils/helpers');
 const { cacheEmbed, registerButton } = require('../../services/buttonHandler');
 
 const RECORD_TYPE_CHOICES = [
@@ -173,7 +173,7 @@ module.exports = {
       if (!privacy.canViewer(interaction.user.id, target.id, interaction.guildId, 'prs')) {
         return interaction.editReply({ content: privacy.denyMessage() });
       }
-      const prs = prService.getUserPRs(target.id, interaction.guildId, 'approved');
+      const prs = prService.currentBests(target.id, interaction.guildId);
       if (prs.length === 0) {
         return interaction.editReply({ embeds: [embed('Personal Records', `No approved PRs for <@${target.id}> yet. Use \`/pr submit\` and have a buddy validate.`, COLORS.warning)] });
       }
@@ -182,7 +182,7 @@ module.exports = {
         .setColor(COLORS.gold).setTimestamp();
       for (const pr of prs.slice(0, 25)) {
         const def = recordTypes[pr.exercise];
-        const name = def?.label || pr.exercise.split(' ').map(w => w[0].toUpperCase() + w.slice(1)).join(' ');
+        const name = def?.label || titleCase(pr.exercise);
         const date = new Date((pr.validated_at || pr.created_at) * 1000).toLocaleDateString();
         const validator = pr.validator_id ? `Validated by <@${pr.validator_id}>` : 'Self-recorded (legacy)';
         e.addFields({ name, value: `${fmtPrValue(pr)}\n${validator} · ${date}`, inline: true });

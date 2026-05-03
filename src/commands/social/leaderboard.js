@@ -49,8 +49,13 @@ module.exports = {
         break;
 
       case 'volume':
+        // Normalize kg → lbs so users with mixed unit logs are compared fairly.
         rows = db.prepare(
-          'SELECT user_id, SUM(sets * reps * weight) as value FROM workouts WHERE guild_id = ? AND created_at >= ? AND weight > 0 GROUP BY user_id ORDER BY value DESC LIMIT 10'
+          `SELECT user_id,
+                  SUM(sets * reps * (CASE WHEN weight_unit = 'kg' THEN weight / 0.453592 ELSE weight END)) AS value
+             FROM workouts
+            WHERE guild_id = ? AND created_at >= ? AND weight > 0
+            GROUP BY user_id ORDER BY value DESC LIMIT 10`
         ).all(interaction.guildId, weekAgo);
         title = 'Total Volume Lifted (7 Days)';
         valueLabel = 'lbs';

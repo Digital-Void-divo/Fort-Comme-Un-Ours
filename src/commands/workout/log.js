@@ -6,7 +6,7 @@ const sessions = require('../../services/sessionService');
 const buddies = require('../../services/buddyService');
 const privacy = require('../../services/privacyService');
 const audit = require('../../services/auditService');
-const { successEmbed, publishButton, safeDM } = require('../../utils/helpers');
+const { successEmbed, publishButton, safeDM, titleCase } = require('../../utils/helpers');
 const { checkMilestones } = require('../../services/roleRewards');
 const { cacheEmbed } = require('../../services/buttonHandler');
 const exercises = require('../../data/exercises');
@@ -45,7 +45,7 @@ module.exports = {
       const matches = Object.keys(exercises)
         .filter(e => e.includes(focused))
         .slice(0, 25)
-        .map(e => ({ name: e.split(' ').map(w => w[0].toUpperCase() + w.slice(1)).join(' '), value: e }));
+        .map(e => ({ name: titleCase(e), value: e }));
       await interaction.respond(matches);
     } catch (err) {
       console.error('Autocomplete failed:', err.message);
@@ -73,7 +73,7 @@ module.exports = {
     audit.log(interaction.guildId, interaction.user.id, 'workout.log', { exercise, sets, reps, weight, sessionId: activeSession?.id });
 
     const streak = updateStreak(interaction.user.id, interaction.guildId);
-    const exerciseTitle = exercise.split(' ').map(w => w[0].toUpperCase() + w.slice(1)).join(' ');
+    const exerciseTitle = titleCase(exercise);
 
     const fields = [
       `**Exercise:** ${exerciseTitle}`,
@@ -91,8 +91,8 @@ module.exports = {
     // PR suggestion: if heavier than current approved best, suggest /pr submit (no auto self-attest).
     if (weight > 0) {
       const best = prService.bestApproved(interaction.user.id, interaction.guildId, exercise);
-      const bestLbs = best ? (best.weight_unit === 'kg' ? best.weight / 0.453592 : best.weight) : 0;
-      const newLbs = unit === 'kg' ? weight / 0.453592 : weight;
+      const bestLbs = best ? prService.comparableScore({ ...best, record_type: 'weight' }) : 0;
+      const newLbs = prService.comparableScore({ record_type: 'weight', weight, weight_unit: unit });
       if (newLbs > bestLbs) {
         e.addFields({
           name: '🏆 Possible PR',

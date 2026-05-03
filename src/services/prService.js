@@ -32,12 +32,22 @@ function comparableScore(pr) {
   }
 }
 
+// Lower score wins for time-based records, higher wins for everything else.
+function isBetter(candidate, incumbent) {
+  if (!incumbent) return true;
+  const a = comparableScore(candidate);
+  const b = comparableScore(incumbent);
+  return candidate.record_type === 'time' ? a < b : a > b;
+}
+
 function bestApproved(userId, guildId, exercise) {
-  return getDb().prepare(
+  const rows = getDb().prepare(
     `SELECT * FROM personal_records
-      WHERE user_id = ? AND guild_id = ? AND exercise = ? AND status = 'approved'
-      ORDER BY validated_at DESC, created_at DESC LIMIT 1`
-  ).get(userId, guildId, exercise);
+      WHERE user_id = ? AND guild_id = ? AND exercise = ? AND status = 'approved'`
+  ).all(userId, guildId, exercise);
+  let best = null;
+  for (const r of rows) if (isBetter(r, best)) best = r;
+  return best;
 }
 
 function getUserPRs(userId, guildId, status = 'approved') {
@@ -46,6 +56,17 @@ function getUserPRs(userId, guildId, status = 'approved') {
       WHERE user_id = ? AND guild_id = ? AND status = ?
       ORDER BY exercise`
   ).all(userId, guildId, status);
+}
+
+// Returns one row per exercise — the current best (highest score, or lowest for time).
+function currentBests(userId, guildId) {
+  const rows = getUserPRs(userId, guildId, 'approved');
+  const byEx = new Map();
+  for (const r of rows) {
+    const cur = byEx.get(r.exercise);
+    if (isBetter(r, cur)) byEx.set(r.exercise, r);
+  }
+  return [...byEx.values()].sort((a, b) => a.exercise.localeCompare(b.exercise));
 }
 
 function createPending(prData) {
@@ -75,12 +96,7 @@ function approve(id, validatorId) {
   if (!pr || pr.status !== 'pending') return { ok: false, reason: 'not_pending' };
 
   const previous = bestApproved(pr.user_id, pr.guild_id, pr.exercise);
-  let isImprovement = true;
-  if (previous) {
-    const prevScore = comparableScore(previous);
-    const newScore = comparableScore(pr);
-    isImprovement = pr.record_type === 'time' ? newScore < prevScore : newScore > prevScore;
-  }
+  const isImprovement = isBetter(pr, previous);
 
   getDb().prepare(
     `UPDATE personal_records
@@ -124,6 +140,7 @@ function pendingFor(validatorId, guildId) {
 
 module.exports = {
   bestApproved,
+  currentBests,
   getUserPRs,
   createPending,
   getById,

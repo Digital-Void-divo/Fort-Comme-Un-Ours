@@ -1,6 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const { getDb } = require('../../services/database');
-const { COLORS, progressBar, todayEpoch, publishButton } = require('../../utils/helpers');
+const { COLORS, progressBar, todayEpoch, publishButton, titleCase } = require('../../utils/helpers');
 const { cacheEmbed } = require('../../services/buttonHandler');
 const { getStreak } = require('../../services/streakService');
 
@@ -44,9 +44,11 @@ module.exports = {
       'SELECT COUNT(*) as count, COUNT(DISTINCT exercise) as exercises FROM workouts WHERE user_id = ? AND guild_id = ? AND created_at >= ?'
     ).get(userId, guildId, since);
 
-    // Total volume
+    // Total volume — kg lifts are converted to lbs so the total is comparable.
     const volume = db.prepare(
-      'SELECT COALESCE(SUM(sets * reps * weight), 0) as total FROM workouts WHERE user_id = ? AND guild_id = ? AND created_at >= ? AND weight > 0'
+      `SELECT COALESCE(SUM(sets * reps * (CASE WHEN weight_unit = 'kg' THEN weight/0.453592 ELSE weight END)), 0) as total
+         FROM workouts
+        WHERE user_id = ? AND guild_id = ? AND created_at >= ? AND weight > 0`
     ).get(userId, guildId, since);
 
     // Streak
@@ -145,7 +147,7 @@ module.exports = {
     // Top exercises
     if (topExercises.length > 0) {
       const top = topExercises.map((t, i) => {
-        const name = t.exercise.split(' ').map(w => w[0].toUpperCase() + w.slice(1)).join(' ');
+        const name = titleCase(t.exercise);
         return `${['🥇', '🥈', '🥉'][i]} ${name} (${t.count}x)`;
       }).join('\n');
       e.addFields({ name: '⭐ Most Trained', value: top });

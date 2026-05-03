@@ -9,8 +9,8 @@ function registerButton(prefix, handler) {
   handlers[prefix] = handler;
 }
 
-function cacheEmbed(key, embeds, guildId) {
-  publishCache.set(key, { embeds, guildId, cachedAt: Date.now() });
+function cacheEmbed(key, embeds, guildId, files = null) {
+  publishCache.set(key, { embeds, files, guildId, cachedAt: Date.now() });
   // Clean old entries (>30 min)
   for (const [k, v] of publishCache) {
     if (Date.now() - v.cachedAt > 1800000) publishCache.delete(k);
@@ -53,7 +53,9 @@ async function handlePublish(interaction) {
       if (role) content = role.toString();
     }
 
-    await interaction.channel.send({ content, embeds: cached.embeds });
+    const sendPayload = { content, embeds: cached.embeds };
+    if (cached.files && cached.files.length) sendPayload.files = cached.files;
+    await interaction.channel.send(sendPayload);
 
     // Disable the button
     try {

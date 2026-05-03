@@ -105,7 +105,7 @@ module.exports = {
     }
 
     const key = `gs|${interaction.guildId}|${Date.now()}`;
-    cacheEmbed(key, [e], interaction.guildId);
+    cacheEmbed(key, [e], interaction.guildId, files);
     return interaction.editReply({ embeds: [e], files, components: [publishButton(key)] });
   },
 };

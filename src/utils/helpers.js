@@ -83,8 +83,17 @@ function parseDuration(str) {
   return val * (multipliers[unit] || 0);
 }
 
+// Capitalize each whitespace-separated word. Tolerates empty tokens (multiple spaces)
+// and non-string input so callers don't have to guard.
+function titleCase(str) {
+  if (typeof str !== 'string' || !str) return '';
+  return str.split(/\s+/).filter(Boolean)
+    .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(' ');
+}
+
 module.exports = {
   COLORS, embed, errorEmbed, successEmbed, progressBar,
   formatNumber, daysBetween, todayEpoch, weekStartFor,
-  safeDM, parseDuration, publishButton,
+  safeDM, parseDuration, publishButton, titleCase,
 };
